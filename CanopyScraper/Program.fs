@@ -20,42 +20,14 @@ open Thoth.Json.Net
 open Helpers
 open Helpers.Builders
 
+open Data.InputData
+open Settings.Settings
 open Serialization.Serialisation
 
 module MyCanopy = 
     
     let internal canopyResult () = 
-
-        let urls = 
-            [
-                "https://www.kodis.cz/lines/city?tab=MHD+Ostrava"
-                "https://www.kodis.cz/lines/region?tab=75" 
-                "https://www.kodis.cz/lines/city?tab=MHD+Opava"
-                "https://www.kodis.cz/lines/region?tab=232-293"
-                "https://www.kodis.cz/lines/city?tab=MHD+Frýdek-Místek"
-                "https://www.kodis.cz/lines/region?tab=331-392"
-                "https://www.kodis.cz/lines/city?tab=MHD+Havířov"
-                "https://www.kodis.cz/lines/region?tab=440-465"
-                "https://www.kodis.cz/lines/city?tab=MHD+Karviná"
-                "https://www.kodis.cz/lines/city?tab=MHD+Orlová"
-                "https://www.kodis.cz/lines/region?tab=531-583"
-                "https://www.kodis.cz/lines/city?tab=MHD+Nový+Jičín"
-                "https://www.kodis.cz/lines/city?tab=MHD+Studénka"
-                "https://www.kodis.cz/lines/region?tab=613-699"
-                "https://www.kodis.cz/lines/city?tab=MHD+Třinec"
-                "https://www.kodis.cz/lines/city?tab=MHD+Český+Těšín"
-                "https://www.kodis.cz/lines/region?tab=731-788"
-                "https://www.kodis.cz/lines/city?tab=MHD+Krnov"
-                "https://www.kodis.cz/lines/city?tab=MHD+Bruntál"
-                "https://www.kodis.cz/lines/region?tab=811-885"
-                "https://www.kodis.cz/lines/region?tab=901-990"
-                "https://www.kodis.cz/lines/train?tab=S1-S34"
-                "https://www.kodis.cz/lines/train?tab=R8-R62"
-                "https://www.kodis.cz/lines/city?tab=NAD+MHD"
-                "https://www.kodis.cz/lines/region?tab=NAD" 
-                "https://www.kodis.cz/lines/boat?tab=Lodní+doprava"
-            ]
-        
+    
         let urlsChanges = 
             2115 :: [ 2400 .. 2800 ]
             |> List.map (fun item -> sprintf "%s%s" "https://www.kodis.cz/changes/" (string item))
@@ -81,7 +53,7 @@ module MyCanopy =
         let startHeadlessEdge () =
 
            try
-               canopy.configuration.edgeDir <- @"c:/temp/driver"
+               canopy.configuration.edgeDir <- pathToDriver
    
                let service = EdgeDriverService.CreateDefaultService(canopy.configuration.edgeDir)
                service.HideCommandPromptWindow <- true
@@ -121,7 +93,8 @@ module MyCanopy =
 
             match startHeadlessEdge () with
             | Error _ 
-                -> []
+                -> 
+                []
             | Ok _ 
                 ->
                 try
@@ -155,7 +128,7 @@ module MyCanopy =
                                     |> List.choose id  
                                     |> List.distinct
                                     |> List.filter 
-                                        (fun item -> item.Contains "https://kodis-files.s3.eu-central-1.amazonaws.com/")                                
+                                        (fun item -> item.Contains urlKodis)                                
                                 | false 
                                     -> 
                                     []
@@ -175,7 +148,8 @@ module MyCanopy =
 
             match startHeadlessEdge () with
             | Error _ 
-                -> []
+                -> 
+                []
             | Ok _ 
                 ->
                 try
@@ -193,10 +167,22 @@ module MyCanopy =
                                     canopy.classic.waitFor linksShown                         
                                 
                                     let buttons = 
+                                        let originalError = Console.Error
                                         try
-                                            canopy.classic.elements "button[title='Budoucí jízdní řády']"
+                                            Console.SetError(System.IO.TextWriter.Null)
+                                            
+                                            let buttons = 
+                                                try
+                                                    canopy.classic.elements "button[title='Budoucí jízdní řády']"
+                                                with
+                                                | _ -> []
+                                            
+                                            Console.SetError(originalError)
+                                            buttons
                                         with
-                                        | _ -> []  // Silently return empty list if buttons not found
+                                        | ex -> 
+                                            Console.SetError(originalError)
+                                            []
                                  
                                     let result =  
                                         buttons
@@ -248,8 +234,8 @@ module MyCanopy =
                             | _ -> []
 
                         urls 
-                        |> List.collect scrapeUrl
-                        |> List.filter (fun item -> not <| (item.Contains "2022" || item.Contains "2023" || item.Contains "2024"))
+                        |> List.collect scrapeUrl 
+                        |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
                     with
                     | _ -> []
                 finally
@@ -304,6 +290,7 @@ module MyCanopy =
                         |> List.filter (fun item -> not <| (item.Contains "2022" || item.Contains "2023" || item.Contains "2024"))
                     with
                     | _ -> []
+
                 finally
                     canopy.classic.quit()
         
@@ -325,7 +312,6 @@ module MyCanopy =
             
             printfn "\n=== Total unique links: %d ===" list.Length
 
-            let path = "CanopyResults/canopy_results.json"
             let dir = Path.GetDirectoryName path
             
             // create the folder if missing
@@ -383,11 +369,7 @@ module MyCanopy =
             | ex -> Error (sprintf "%s %s" <| string ex.Message <| " Error Canopy 002")
     
         async
-            {
-                let path = "CanopyResults/canopy_results.json"                
-                let url = "http://kodis.somee.com/api/" 
-                let apiKeyTest = "test747646s5d4fvasfd645654asgasga654a6g13a2fg465a4fg4a3"
-                                                      
+            {                                                      
                 let thothJsonPayload =                    
                     match getJsonString path with
                     | Ok jsonString -> jsonString                                  

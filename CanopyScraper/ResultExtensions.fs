@@ -39,31 +39,3 @@ module Result =
            match c with
            | Choice1Of2 v -> Ok v
            | Choice2Of2 e -> Error e
-
-    (*
-    let defaultWith defaultFn res =
-        match res with
-        | Ok value  -> value
-        | Error err -> defaultFn err 
-        
-    let defaultValue default res =
-        match res with
-        | Ok value -> value
-        | Error _  -> default
-        
-    let map f res =
-        match res with
-        | Ok value  -> Ok (f value)
-        | Error err -> Error err
-
-    let mapError f res =
-        match res with
-        | Ok value  -> Ok value
-        | Error err -> Error (f err)
-
-    let bind f res =
-        match res with
-        | Ok value  -> f value
-        | Error err -> Error err
-    *)
-
