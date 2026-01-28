@@ -10,6 +10,7 @@
 		<Compile Include="ResultExtensions.fs" />
 		<Compile Include="OptionExtensions.fs" />
 		<Compile Include="Settings.fs" />
+		<Compile Include="Helpers.fs" />
 		<Compile Include="InputData.fs" />
 		<Compile Include="ThothCoders.fs" />
 		<Compile Include="Serialization.fs" />

@@ -83,7 +83,8 @@ module ApiClient =
                          Decode.fromString decoderPut jsonMsg   
                          |> function
                              | Ok value 
-                                 -> value   
+                                 -> 
+                                 value   
                              | Error err 
                                  -> 
                                 { 
@@ -102,7 +103,8 @@ module ApiClient =
         |> Result.ofChoice    
         |> function
             | Ok value 
-                -> value 
+                -> 
+                value 
             | Error ex
                 -> 
                 {

@@ -9,6 +9,7 @@ open OpenQA.Selenium.Edge
 open Data.InputData
 open Settings.Settings
 open Serialization.Serialisation
+open Helpers.ProcessHelpers
 
 module MyCanopy = 
 
@@ -160,8 +161,11 @@ module MyCanopy =
                         |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
                     with
                     | _ -> []
-                finally
+
+                finally                     
                     canopy.classic.quit()
+                    Thread.Sleep 1200
+                    killEdgeZombies ()
         
         let currentAndFutureLinks () = 
 
@@ -235,8 +239,11 @@ module MyCanopy =
                         |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
                     with
                     | _ -> []
+
                 finally
                     canopy.classic.quit()
+                    Thread.Sleep 1200
+                    killEdgeZombies () 
 
         let currentLinks () = 
 
@@ -290,6 +297,8 @@ module MyCanopy =
 
                 finally
                     canopy.classic.quit()
+                    Thread.Sleep 1200
+                    killEdgeZombies ()
         
         try
             printfn "=== Starting changesLinks() ==="
