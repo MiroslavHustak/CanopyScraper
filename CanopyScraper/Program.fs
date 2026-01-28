@@ -1,11 +1,4 @@
-﻿(*
-    Code in this file uses Canopy created by Chris Holt, Amir Rajan, and Jeremy Bellows.
-    Copyright (c) 2011 Chris Holt
-    Licensed under the MIT License
-    https://github.com/lefthandedgoat/canopy
-*)
-
-namespace MyCanopy
+﻿namespace MyCanopy
 
 open System
 open System.IO
@@ -26,6 +19,18 @@ open Serialization.Serialisation
 
 module MyCanopy = 
     
+    let private safeElements selector =
+        try
+            canopy.classic.elements selector
+        with
+        | _ -> []
+
+    let private safeElementWithText tag text =
+        try
+            Some (canopy.classic.elementWithText tag text)
+        with
+        | _ -> None
+
     let internal canopyResult () = 
     
         let urlsChanges = 
@@ -33,7 +38,7 @@ module MyCanopy =
             |> List.map (fun item -> sprintf "%s%s" "https://www.kodis.cz/changes/" (string item))
 
         let scrapeGeneral () = 
-            canopy.classic.elements "a"
+            safeElements "a"
             |> List.map 
                 (fun item 
                     ->                                                     
@@ -45,8 +50,9 @@ module MyCanopy =
 
         let clickCondition () =
             try                             
-                let nextButton = canopy.classic.elementWithText "a" "Další"
-                nextButton.Displayed && nextButton.Enabled
+                match safeElementWithText "a" "Další" with
+                | Some nextButton -> nextButton.Displayed && nextButton.Enabled
+                | None -> false
             with
             | _ -> false  
 
@@ -92,15 +98,15 @@ module MyCanopy =
         let changesLinks () = 
 
             match startHeadlessEdge () with
-            | Error _ 
-                -> 
+            | Error _
+                ->
                 []
             | Ok _ 
                 ->
                 try
                     try
                         let linksShown () = 
-                            Some (canopy.classic.elements "ul > li > div" |> Seq.length >= 1)
+                            Some (safeElements "ul > li > div" |> Seq.length >= 1)
                   
                         let scrapeUrl (url: string) =
                             try
@@ -120,25 +126,21 @@ module MyCanopy =
                                             |> Option.orElse (System.Threading.Thread.Sleep 250; None)
                                         )
                                     |> Option.defaultValue false                           
-                               
+
                                 match waitForWithTimeout 5.0 linksShown with
-                                | true 
-                                    ->
+                                | true ->
                                     scrapeGeneral ()
                                     |> List.choose id  
                                     |> List.distinct
                                     |> List.filter 
-                                        (fun item -> item.Contains urlKodis)                                
-                                | false 
-                                    -> 
-                                    []
+                                        (fun item -> item.Contains urlKodis)
+                                | false -> []
                             with
                             | _ -> []
 
                         urlsChanges 
                         |> List.collect scrapeUrl
-                        |> List.filter (fun item -> not <| (item.Contains "2022" || item.Contains "2023" || item.Contains "2024"))
-
+                        |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
                     with
                     | _ -> []
                 finally
@@ -148,14 +150,14 @@ module MyCanopy =
 
             match startHeadlessEdge () with
             | Error _ 
-                -> 
+                ->
                 []
             | Ok _ 
                 ->
                 try
                     try
                         let linksShown () = 
-                            (canopy.classic.elements ".Card_actions__HhB_f").Length >= 1               
+                            (safeElements ".Card_actions__HhB_f").Length >= 1               
 
                         let scrapeUrl (url : string) =
                             try
@@ -164,54 +166,30 @@ module MyCanopy =
                                 let pdfLinkList () =
                                     Thread.Sleep 15000            
                                 
-                                    canopy.classic.waitFor linksShown                         
+                                    canopy.classic.waitFor linksShown
                                 
                                     let buttons = 
-                                        let originalError = Console.Error
-                                        try
-                                            Console.SetError(System.IO.TextWriter.Null)
+                                        safeElements "button[title='Budoucí jízdní řády']"
+                                    
+                                    buttons
+                                    |> List.mapi (fun i button -> 
+                                        canopy.classic.click button
+                                        Thread.Sleep 2000   
                                             
-                                            let buttons = 
-                                                try
-                                                    canopy.classic.elements "button[title='Budoucí jízdní řády']"
-                                                with
-                                                | _ -> []
-                                            
-                                            Console.SetError(originalError)
-                                            buttons
-                                        with
-                                        | ex -> 
-                                            Console.SetError(originalError)
-                                            []
-                                 
-                                    let result =  
-                                        buttons
-                                        |> List.mapi 
-                                            (fun i button 
-                                                -> 
-                                                canopy.classic.click button 
-                                                Thread.Sleep 2000   
-                                                    
-                                                let result = scrapeGeneral ()                                       
-                                            
-                                                match i = buttons.Length - 1 with 
-                                                | true 
-                                                    ->       
-                                                    canopy.classic.waitForElement "[id*='headlessui-menu-item']"
-                                                    canopy.classic.click button
-                                                    Thread.Sleep 2000   
-                                                | false 
-                                                    -> 
-                                                    ()
+                                        let result = scrapeGeneral ()                                       
+                                        
+                                        match i = buttons.Length - 1 with 
+                                        | true ->
+                                            safeElementWithText "button" "Budoucí jízdní řády"
+                                            |> Option.iter (fun b -> canopy.classic.click b; Thread.Sleep 2000)
+                                        | false -> ()
 
-                                                canopy.classic.navigate canopy.classic.forward
-                                                result 
-                                            )
-                                        |> List.concat    
-                                        |> List.distinct   
-                                    
-                                    result
-                                    
+                                        canopy.classic.navigate canopy.classic.forward
+                                        result
+                                    )
+                                    |> List.concat    
+                                    |> List.distinct   
+                                
                                 let pdfLinkList1 = pdfLinkList () |> List.distinct
 
                                 let pdfLinkList2 = 
@@ -220,7 +198,8 @@ module MyCanopy =
                                     |> Seq.collect
                                         (fun _ -> 
                                             try 
-                                                canopy.classic.click (canopy.classic.elementWithText "a" "Další")
+                                                safeElementWithText "a" "Další"
+                                                |> Option.iter canopy.classic.click
                                                 pdfLinkList ()
                                             with
                                             | _ -> []
@@ -229,7 +208,6 @@ module MyCanopy =
                                     |> Seq.toList                  
 
                                 (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
-
                             with
                             | _ -> []
 
@@ -245,49 +223,49 @@ module MyCanopy =
 
             match startHeadlessEdge () with
             | Error _ 
-                -> 
+                ->
                 []
-            | Ok _ 
+            | Ok _
                 ->
                 try
                     try
                         let linksShown () = 
-                            (canopy.classic.elements ".Card_actions__HhB_f").Length >= 1
-                    
+                            (safeElements ".Card_actions__HhB_f").Length >= 1
+                        
                         let scrapeUrl (url: string) =
                             try
                                 canopy.classic.url url
-                    
+                        
                                 let pdfLinkList () =
                                     Thread.Sleep 15000  
                                     canopy.classic.waitFor linksShown  
                                     scrapeGeneral ()  
                                                 
                                 let pdfLinkList1 = pdfLinkList () |> List.distinct
-                    
+                        
                                 let pdfLinkList2 = 
                                     Seq.initInfinite (fun _ -> clickCondition())
                                     |> Seq.takeWhile ((=) true) 
                                     |> Seq.collect
-                                        (fun _ 
-                                            -> 
+                                        (fun _ -> 
                                             try 
-                                                canopy.classic.click (canopy.classic.elementWithText "a" "Další")
+                                                safeElementWithText "a" "Další"
+                                                |> Option.iter canopy.classic.click
                                                 pdfLinkList ()
                                             with
                                             | _ -> []
                                         )
                                     |> Seq.distinct
                                     |> Seq.toList                  
-                    
+                        
                                 (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
-                    
+                        
                             with
                             | _ -> []
 
                         urls 
                         |> List.collect scrapeUrl
-                        |> List.filter (fun item -> not <| (item.Contains "2022" || item.Contains "2023" || item.Contains "2024"))
+                        |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
                     with
                     | _ -> []
 
@@ -314,7 +292,6 @@ module MyCanopy =
 
             let dir = Path.GetDirectoryName path
             
-            // create the folder if missing
             match Directory.Exists dir with
             | true  -> ()
             | false -> Directory.CreateDirectory dir |> ignore
@@ -323,100 +300,4 @@ module MyCanopy =
         with
         | ex -> 
             eprintfn "CRITICAL ERROR: %s" ex.Message
-            Error <| (sprintf "%s %s" <| string ex.Message <| " Error Canopy 001 combined")   
-
-    type ResponsePut = 
-        {
-            Message1 : string
-            Message2 : string
-        }
-
-    let private decoderPut : Decoder<ResponsePut> =
-        Decode.object
-            (fun get 
-                ->
-                {
-                    Message1 = get.Required.Field "Message1" Decode.string
-                    Message2 = get.Required.Field "Message2" Decode.string
-                }
-            )
-
-    let internal putToRestApiTest () =
-            
-        let getJsonString path =
-
-            try
-                pyramidOfDoom
-                    {
-                        let filepath = Path.GetFullPath path |> Option.ofNullEmpty 
-                        let! filepath = filepath, Error (sprintf "%s%s" "Chyba při čtení cesty k souboru " path)
-    
-                        let fInfodat : FileInfo = FileInfo filepath
-                        let! _ = fInfodat.Exists |> Option.ofBool, Error (sprintf "Soubor %s nenalezen" path) 
-                     
-                        use fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.None) 
-                        let! _ = fs |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                        
-                        
-                        use reader = new StreamReader(fs)
-                        let! _ = reader |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath) 
-                    
-                        let jsonString = reader.ReadToEnd()
-                        let! jsonString = jsonString |> Option.ofNullEmpty, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                      
-                                      
-                        return Ok jsonString 
-                    }
-            with
-            | ex -> Error (sprintf "%s %s" <| string ex.Message <| " Error Canopy 002")
-    
-        async
-            {                                                      
-                let thothJsonPayload =                    
-                    match getJsonString path with
-                    | Ok jsonString -> jsonString                                  
-                    | Error _       -> String.Empty            
-               
-                let! response = 
-                    http
-                        {
-                            PUT url
-                            header "X-API-KEY" apiKeyTest 
-                            body 
-                            json thothJsonPayload
-                        }
-                    |> Request.sendAsync       
-                        
-                match response.statusCode with
-                | HttpStatusCode.OK 
-                    -> 
-                     let! jsonMsg = Response.toTextAsync response
-    
-                     return                          
-                         Decode.fromString decoderPut jsonMsg   
-                         |> function
-                             | Ok value 
-                                 -> value   
-                             | Error err 
-                                 -> 
-                                { 
-                                    Message1 = String.Empty
-                                    Message2 = (sprintf "%s %s" <| err <| " Error Canopy 003") 
-                                }      
-                | _ -> 
-                     return 
-                        { 
-                            Message1 = String.Empty
-                            Message2 = sprintf "Request failed with status code %d" (int response.statusCode)
-                        }                                           
-            } 
-        |> Async.Catch 
-        |> Async.RunSynchronously
-        |> Result.ofChoice    
-        |> function
-            | Ok value 
-                -> value 
-            | Error ex
-                -> 
-                {
-                    Message1 = String.Empty
-                    Message2 = (sprintf "%s %s" <| string ex.Message <| " Error Canopy 004")
-                }
+            Error <| (sprintf "%s %s" <| string ex.Message <| " Error Canopy 001 combined")
