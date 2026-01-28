@@ -2,34 +2,51 @@
 
 open System
 open System.IO
-open System.Net
 open System.Threading
 
 open OpenQA.Selenium.Edge
-
-open FsHttp
-open Thoth.Json.Net
-
-open Helpers
-open Helpers.Builders
 
 open Data.InputData
 open Settings.Settings
 open Serialization.Serialisation
 
 module MyCanopy = 
+
+    let private withSuppressedCanopyNoise (f : unit -> 'T) : 'T =
+
+        let origOut = Console.Out
+        let origErr = Console.Error
+
+        use dummy = new StringWriter()
+
+        Console.SetOut dummy
+        Console.SetError dummy
+
+        try 
+            f()
+        finally
+            Console.SetOut origOut
+            Console.SetError origErr
     
     let private safeElements selector =
-        try
-            canopy.classic.elements selector
-        with
-        | _ -> []
+        withSuppressedCanopyNoise
+            (fun () 
+                ->
+                try
+                    canopy.classic.elements selector
+                with
+                | _ -> []
+            )
 
     let private safeElementWithText tag text =
-        try
-            Some (canopy.classic.elementWithText tag text)
-        with
-        | _ -> None
+        withSuppressedCanopyNoise
+            (fun () 
+                ->
+                try
+                    Some (canopy.classic.elementWithText tag text)
+                with
+                | _ -> None
+            )
 
     let internal canopyResult () = 
     
@@ -166,10 +183,12 @@ module MyCanopy =
                                 let pdfLinkList () =
                                     Thread.Sleep 15000            
                                 
-                                    canopy.classic.waitFor linksShown
+                                    withSuppressedCanopyNoise
+                                        (fun () -> canopy.classic.waitFor linksShown)                                   
                                 
                                     let buttons = 
-                                        safeElements "button[title='Budoucí jízdní řády']"
+                                        withSuppressedCanopyNoise
+                                            (fun () -> safeElements "button[title='Budoucí jízdní řády']")
                                     
                                     buttons
                                     |> List.mapi (fun i button -> 
@@ -301,100 +320,3 @@ module MyCanopy =
         | ex -> 
             eprintfn "CRITICAL ERROR: %s" ex.Message
             Error <| (sprintf "%s %s" <| string ex.Message <| " Error Canopy 001 combined")
-
-
-    type ResponsePut = 
-        {
-            Message1 : string
-            Message2 : string
-        }
-
-    let private decoderPut : Decoder<ResponsePut> =
-        Decode.object
-            (fun get 
-                ->
-                {
-                    Message1 = get.Required.Field "Message1" Decode.string
-                    Message2 = get.Required.Field "Message2" Decode.string
-                }
-            )
-
-    let internal putToRestApiTest () =
-            
-        let getJsonString path =
-
-            try
-                pyramidOfDoom
-                    {
-                        let filepath = Path.GetFullPath path |> Option.ofNullEmpty 
-                        let! filepath = filepath, Error (sprintf "%s%s" "Chyba při čtení cesty k souboru " path)
-    
-                        let fInfodat : FileInfo = FileInfo filepath
-                        let! _ = fInfodat.Exists |> Option.ofBool, Error (sprintf "Soubor %s nenalezen" path) 
-                     
-                        use fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.None) 
-                        let! _ = fs |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                        
-                        
-                        use reader = new StreamReader(fs)
-                        let! _ = reader |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath) 
-                    
-                        let jsonString = reader.ReadToEnd()
-                        let! jsonString = jsonString |> Option.ofNullEmpty, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                      
-                                      
-                        return Ok jsonString 
-                    }
-            with
-            | ex -> Error (sprintf "%s %s" <| string ex.Message <| " Error Canopy 002")
-    
-        async
-            {                                                      
-                let thothJsonPayload =                    
-                    match getJsonString path with
-                    | Ok jsonString -> jsonString                                  
-                    | Error _       -> String.Empty            
-               
-                let! response = 
-                    http
-                        {
-                            PUT url
-                            header "X-API-KEY" apiKeyTest 
-                            body 
-                            json thothJsonPayload
-                        }
-                    |> Request.sendAsync       
-                        
-                match response.statusCode with
-                | HttpStatusCode.OK 
-                    -> 
-                     let! jsonMsg = Response.toTextAsync response
-    
-                     return                          
-                         Decode.fromString decoderPut jsonMsg   
-                         |> function
-                             | Ok value 
-                                 -> value   
-                             | Error err 
-                                 -> 
-                                { 
-                                    Message1 = String.Empty
-                                    Message2 = (sprintf "%s %s" <| err <| " Error Canopy 003") 
-                                }      
-                | _ -> 
-                     return 
-                        { 
-                            Message1 = String.Empty
-                            Message2 = sprintf "Request failed with status code %d" (int response.statusCode)
-                        }                                           
-            } 
-        |> Async.Catch 
-        |> Async.RunSynchronously
-        |> Result.ofChoice    
-        |> function
-            | Ok value 
-                -> value 
-            | Error ex
-                -> 
-                {
-                    Message1 = String.Empty
-                    Message2 = (sprintf "%s %s" <| string ex.Message <| " Error Canopy 004")
-                }

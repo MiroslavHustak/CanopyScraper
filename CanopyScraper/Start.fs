@@ -1,4 +1,5 @@
 ﻿open System
+open System.IO
 
 open MyCanopy.MyCanopy
 
@@ -11,7 +12,7 @@ open MyCanopy.MyCanopy
 
 [<EntryPoint>] 
 let main argv =  
-
+   
     let nowStart = DateTime.Now
     let hourStart =  nowStart.Hour 
     let minuteStart = nowStart.Minute 
@@ -20,7 +21,7 @@ let main argv =
     printfn "Canopy (F#) web testing tool. Stiskni cokoliv pro pokračování testu."
     Console.ReadKey () |> ignore
             
-    match MyCanopy.MyCanopy.canopyResult () with
+    match MyCanopy.MyCanopy.canopyResult() with
     | Ok _      -> printfn "\nScraping a serializace proběhla v pořádku." 
     | Error err -> printfn "Nastal tento problém: %s" err 
 

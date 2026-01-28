@@ -13,6 +13,7 @@
 		<Compile Include="InputData.fs" />
 		<Compile Include="ThothCoders.fs" />
 		<Compile Include="Serialization.fs" />
+		<Compile Include="ApiClient.fs" />
 		<Compile Include="Program.fs" />
 		<Compile Include="Start.fs" />
 	</ItemGroup>
