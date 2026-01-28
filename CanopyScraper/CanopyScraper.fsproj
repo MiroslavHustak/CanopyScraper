@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net8.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="CEBuilders.fs" />
+		<Compile Include="ResultExtensions.fs" />
+		<Compile Include="OptionExtensions.fs" />
+		<Compile Include="ThothCoders.fs" />
+		<Compile Include="Serialization.fs" />
+		<Compile Include="Program.fs" />
+		<Compile Include="Start.fs" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="canopy" Version="2.1.5" />
+		<PackageReference Include="FsHttp" Version="14.5.1" />
+		<PackageReference Include="Thoth.Json.Net" Version="12.0.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Update="FSharp.Core" Version="8.0.401" />
+	</ItemGroup>
+
+</Project>
