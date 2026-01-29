@@ -2,7 +2,7 @@
 
 module InputData =  
 
-    let excludeYears = ["2022"; "2023"; "2024"]
+    let internal excludeYears = ["2022"; "2023"; "2024"]
 
     let internal urls = 
         [

@@ -5,7 +5,7 @@ open System
 module Result =    
           
     //Applicative functor      
-    let internal sequence aListOfResults = //gets the first error - see the book Domain Modelling Made Functional
+    let inline internal sequence aListOfResults = //gets the first error - see the book Domain Modelling Made Functional
         let prepend firstR restR =
             match firstR, restR with
             | Ok first, Ok rest   -> Ok (first :: rest) | Error err1, Ok _ -> Error err1
@@ -25,7 +25,7 @@ module Result =
         | Ok value -> Some value 
         | Error _  -> None  
 
-    let internal fromBool ok err =                               
+    let inline internal fromBool ok err =                               
         function   
         | true  -> Ok ok  
         | false -> Error err
@@ -35,7 +35,7 @@ module Result =
         | Ok _    -> true  
         | Error _ -> false
 
-    let internal ofChoice (c: Choice<'T,'E>) : Result<'T,'E> =
-           match c with
-           | Choice1Of2 v -> Ok v
-           | Choice2Of2 e -> Error e
+    let inline internal ofChoice (c: Choice<'T,'E>) : Result<'T,'E> =
+        match c with
+        | Choice1Of2 v -> Ok v
+        | Choice2Of2 e -> Error e
