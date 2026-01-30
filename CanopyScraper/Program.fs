@@ -121,11 +121,8 @@ module MyCanopy =
                 let changesLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _
-                        ->
-                        []
-                    | Ok _ 
-                        ->
+                    | Error _ -> []
+                    | Ok _    ->
                         try
                             try
                                 let linksShown () = 
@@ -144,12 +141,7 @@ module MyCanopy =
                                 
                                             Seq.initInfinite id
                                             |> Seq.takeWhile (fun _ -> sw.Elapsed < timeout)
-                                            |> Seq.tryPick 
-                                                (fun _ 
-                                                    -> 
-                                                    condition () 
-                                                    |> Option.orElse (System.Threading.Thread.Sleep 250; None)
-                                                )
+                                            |> Seq.tryPick (fun _ -> condition () |> Option.orElse (Thread.Sleep 250; None))
                                             |> Option.defaultValue false                           
 
                                         match waitForWithTimeout 5.0 linksShown with
@@ -158,8 +150,7 @@ module MyCanopy =
                                             scrapeGeneral ()
                                             |> List.choose id  
                                             |> List.distinct
-                                            |> List.filter 
-                                                (fun item -> item.Contains urlKodis)
+                                            |> List.filter (fun item -> item.Contains urlKodis)
                                         | false 
                                             ->
                                             []
@@ -180,11 +171,8 @@ module MyCanopy =
                 let currentAndFutureLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _ 
-                        ->
-                        []
-                    | Ok _ 
-                        ->
+                    | Error _ -> []
+                    | Ok _    ->
                         try
                             try
                                 let linksShown () = 
@@ -205,24 +193,26 @@ module MyCanopy =
                                                     (fun () -> safeElements "button[title='Budoucí jízdní řády']")
                                     
                                             buttons
-                                            |> List.mapi (fun i button -> 
-                                                canopy.classic.click button
-                                                Thread.Sleep 2000   
-                                            
-                                                let result = scrapeGeneral ()                                       
-                                        
-                                                match i = buttons.Length - 1 with 
-                                                | true 
-                                                    ->
-                                                    safeElementWithText "button" "Budoucí jízdní řády"
-                                                    |> Option.iter (fun b -> canopy.classic.click b; Thread.Sleep 2000)
-                                                | false 
+                                            |> List.mapi 
+                                                (fun i button 
                                                     -> 
-                                                    ()
+                                                    canopy.classic.click button
+                                                    Thread.Sleep 2000   
+                                            
+                                                    let result = scrapeGeneral ()                                       
+                                        
+                                                    match i = buttons.Length - 1 with 
+                                                    | true 
+                                                        ->
+                                                        safeElementWithText "button" "Budoucí jízdní řády"
+                                                        |> Option.iter (fun b -> canopy.classic.click b; Thread.Sleep 2000)
+                                                    | false 
+                                                        -> 
+                                                        ()
 
-                                                canopy.classic.navigate canopy.classic.forward
-                                                result
-                                            )
+                                                    canopy.classic.navigate canopy.classic.forward
+                                                    result
+                                                )
                                             |> List.concat    
                                             |> List.distinct   
                                 
@@ -262,11 +252,8 @@ module MyCanopy =
                 let currentLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _ 
-                        ->
-                        []
-                    | Ok _
-                        ->
+                    | Error _ -> []
+                    | Ok _    ->
                         try
                             try
                                 let linksShown () = 
@@ -287,7 +274,8 @@ module MyCanopy =
                                             Seq.initInfinite (fun _ -> clickCondition())
                                             |> Seq.takeWhile ((=) true) 
                                             |> Seq.collect
-                                                (fun _ -> 
+                                                (fun _ 
+                                                    -> 
                                                     try 
                                                         safeElementWithText "a" "Další"
                                                         |> Option.iter canopy.classic.click
