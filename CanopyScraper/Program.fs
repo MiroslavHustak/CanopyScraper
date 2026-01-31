@@ -66,7 +66,7 @@ module MyCanopy =
                         (fun item 
                             ->                                                     
                             let href = string <| item.GetAttribute("href")
-                            match href.EndsWith("pdf") with
+                            match href.EndsWith "pdf" with
                             | true  -> Some href     
                             | false -> None                                                                    
                         )    
@@ -121,8 +121,10 @@ module MyCanopy =
                 let changesLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _ -> []
-                    | Ok _    ->
+                    | Error _ 
+                        -> []
+                    | Ok _
+                        ->
                         try
                             try
                                 let linksShown () = 
@@ -171,8 +173,10 @@ module MyCanopy =
                 let currentAndFutureLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _ -> []
-                    | Ok _    ->
+                    | Error _ 
+                        -> []
+                    | Ok _
+                        ->
                         try
                             try
                                 let linksShown () = 
@@ -252,14 +256,16 @@ module MyCanopy =
                 let currentLinks () = 
 
                     match startHeadlessEdge () with
-                    | Error _ -> []
-                    | Ok _    ->
+                    | Error _ 
+                        -> []
+                    | Ok _   
+                        ->
                         try
                             try
                                 let linksShown () = 
                                     (safeElements ".Card_actions__HhB_f").Length >= 1
                         
-                                let scrapeUrl (url: string) =
+                                let scrapeUrl (url : string) =
                                     try
                                         canopy.classic.url url
                         
