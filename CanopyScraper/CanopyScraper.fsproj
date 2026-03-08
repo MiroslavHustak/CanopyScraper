@@ -6,7 +6,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<None Include="Dockerfile" />
 		<Compile Include="CEBuilders.fs" />
 		<Compile Include="ResultExtensions.fs" />
 		<Compile Include="OptionExtensions.fs" />
@@ -19,9 +18,9 @@
 		<Compile Include="ProgramChrome.fs" />
 		<Compile Include="Program.fs" />
 		<Compile Include="Start.fs" />
+		<None Include="Dockerfile" />
+		<Content Include="DockerCommands" />
 	</ItemGroup>
-
-	<ItemGroup />
 
 	<ItemGroup>
 		<PackageReference Include="canopy" Version="2.1.5" />
