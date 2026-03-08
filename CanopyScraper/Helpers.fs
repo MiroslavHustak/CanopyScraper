@@ -15,6 +15,16 @@ module ProcessHelpers =
         with 
         | _ -> ()
 
+    let internal killChromeZombies () =
+        try
+            Process.GetProcessesByName("chrome") 
+            |> Array.iter (fun p -> try p.Kill() with _ -> ())
+         
+            Process.GetProcessesByName("chromedriver")
+            |> Array.iter (fun p -> try p.Kill() with _ -> ())
+        with 
+        | _ -> ()
+
 module Haskell_IO_Monad_Simulation =    
     
     type [<Struct>] internal IO<'a> = IO of (unit -> 'a) // wrapping custom type simulating Haskell's IO Monad (without the monad, of course)

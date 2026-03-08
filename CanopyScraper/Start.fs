@@ -15,10 +15,17 @@ open Helpers.Haskell_IO_Monad_Simulation
 
 [<EntryPoint>] 
 let main argv =      
-    
-    killEdgeZombies () 
 
-    let nowStart = DateTime.Now
+    match Environment.OSVersion.Platform = PlatformID.Win32NT with
+    | true  -> killEdgeZombies () 
+    | false -> killChromeZombies () 
+
+    let nowUtc = DateTime.UtcNow
+    let ostravaTz = TimeZoneInfo.FindSystemTimeZoneById "Central European Standard Time"
+    let nowOstrava = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, ostravaTz)
+
+    //let nowStart = DateTime.Now
+    let nowStart = nowOstrava
     let hourStart = nowStart.Hour 
     let minuteStart = nowStart.Minute 
     let secondStart = nowStart.Second
@@ -28,7 +35,8 @@ let main argv =
     
     Console.ReadKey () |> ignore<ConsoleKeyInfo>
             
-    match canopyResult >> runIO <| () with
+    //match canopyResult >> runIO <| () with
+    match MyCanopyChrome.MyCanopyChrome.canopyResult >> runIO <| () with
     | Ok _      -> printfn "\nScraping a serializace proběhla v pořádku." 
     | Error err -> printfn "Nastal tento problém: %s" err 
 
@@ -37,7 +45,9 @@ let main argv =
     printfn "%s" result.Message1 
     printfn "%s" result.Message2     
 
-    killEdgeZombies () 
+    match Environment.OSVersion.Platform = PlatformID.Win32NT with
+    | true  -> killEdgeZombies () 
+    | false -> killChromeZombies () 
 
     let nowEnd = DateTime.Now
     let hourEnd = nowEnd.Hour 
