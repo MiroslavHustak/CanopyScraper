@@ -7,7 +7,12 @@
 
 open System
 
-open MyCanopy.MyCanopy
+// Edge <=> Chrome switch 
+//***************************************
+
+open MyCanopy.MyCanopy           //Edge
+//open MyCanopyChrome.MyCanopyChrome //Chrome 
+
 open MyCanopy.ApiClient
 
 open Helpers.ProcessHelpers
@@ -44,11 +49,10 @@ let main argv =
         printfn "Canopy (F#) web testing tool."
             
     match canopyResult >> runIO <| () with
-    //match MyCanopyChrome.MyCanopyChrome.canopyResult >> runIO <| () with
     | Ok _      -> printfn "\nScraping a serializace proběhla v pořádku." 
     | Error err -> printfn "Nastal tento problém: %s" err 
 
-    let result : ResponsePut = putToRestApiTest>> runIO <| ()
+    let result : ResponsePut = putToRestApiTest >> runIO <| ()
 
     printfn "%s" result.Message1 
     printfn "%s" result.Message2     
