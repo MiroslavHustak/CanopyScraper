@@ -31,12 +31,20 @@ let main argv =
     let secondStart = nowStart.Second
     
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
-    printfn "Canopy (F#) web testing tool. Stiskni cokoliv pro pokračování testu."
-    
-    Console.ReadKey () |> ignore<ConsoleKeyInfo>
+
+    let isInteractive = System.Environment.GetEnvironmentVariable("INTERACTIVE")
+
+    match isInteractive = "true" with
+    | true  
+        ->
+        printfn "Canopy (F#) web testing tool. Stiskni cokoliv pro pokračování testu."
+        Console.ReadKey() |> ignore<ConsoleKeyInfo>
+    | false
+        -> 
+        printfn "Canopy (F#) web testing tool."
             
-    //match canopyResult >> runIO <| () with
-    match MyCanopyChrome.MyCanopyChrome.canopyResult >> runIO <| () with
+    match canopyResult >> runIO <| () with
+    //match MyCanopyChrome.MyCanopyChrome.canopyResult >> runIO <| () with
     | Ok _      -> printfn "\nScraping a serializace proběhla v pořádku." 
     | Error err -> printfn "Nastal tento problém: %s" err 
 
@@ -57,7 +65,13 @@ let main argv =
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
     printfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
 
-    printfn "Stiskni cokoliv pro návrat na hlavní stránku."
-    Console.ReadKey() |> ignore<ConsoleKeyInfo>
+    match isInteractive = "true" with
+    | true  
+        ->
+        printfn "Stiskni cokoliv pro návrat na hlavní stránku."
+        Console.ReadKey() |> ignore<ConsoleKeyInfo>
+    | false
+        -> 
+        ()
 
     0

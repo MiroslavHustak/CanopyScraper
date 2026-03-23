@@ -4,6 +4,8 @@ cd "c:\Users\Mira\Docker Learning\CanopyScraper"
 docker build -t canopy-scraper .   //this is a build
 or
 docker build --no-cache -t canopy-scraper .  //to force apt to fetch the latest versions
+or
+docker run -e INTERACTIVE=true -it canopy-scraper
 
 now I have a Docker image, not a container yet. 
 
