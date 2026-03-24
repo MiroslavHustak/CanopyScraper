@@ -7,15 +7,16 @@
 
 open System
 
-// Edge <=> Chrome switch 
+// Edge <=> Chrome/Kubernetes switch 
 //***************************************
 
 open MyCanopy.MyCanopy           //Edge
-//open MyCanopyChrome.MyCanopyChrome //Chrome 
+//open MyCanopyChrome.MyCanopyChrome //Chrome // Kubernetes
 
 open MyCanopy.ApiClient
 
 open Helpers.ProcessHelpers
+open Helpers.InteractiveHelpers 
 open Helpers.Haskell_IO_Monad_Simulation
 
 [<EntryPoint>] 
@@ -37,14 +38,12 @@ let main argv =
     
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
 
-    let isInteractive = System.Environment.GetEnvironmentVariable("INTERACTIVE")
-
-    match isInteractive = "true" with
-    | true  
+    match isInKubernetes || isInContainer with
+    | false  
         ->
         printfn "Canopy (F#) web testing tool. Stiskni cokoliv pro pokračování testu."
         Console.ReadKey() |> ignore<ConsoleKeyInfo>
-    | false
+    | true
         -> 
         printfn "Canopy (F#) web testing tool."
             
@@ -69,12 +68,12 @@ let main argv =
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
     printfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
 
-    match isInteractive = "true" with
-    | true  
+    match isInKubernetes || isInContainer with
+    | false  
         ->
         printfn "Stiskni cokoliv pro návrat na hlavní stránku."
         Console.ReadKey() |> ignore<ConsoleKeyInfo>
-    | false
+    | _true 
         -> 
         ()
 
