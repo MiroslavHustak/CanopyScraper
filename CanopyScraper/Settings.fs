@@ -18,20 +18,20 @@ module Settings =
         System.Environment.GetEnvironmentVariable "DOTNET_RUNNING_IN_CONTAINER"
         |> Option.ofNullEmptySpace
         |> Option.isSome
-   
+       
     // Kubernetes    
     let private basePath =
         Environment.GetEnvironmentVariable "APP_DATA_PATH"
         |> Option.ofNullEmptySpace
         |> Option.defaultValue AppContext.BaseDirectory  
 
-    let private serviceRoot = Path.Combine(basePath, "canopy")      
+    let private serviceRoot = basePath // root for this service's data // if the path logic is to be changed, use Path.Combine like Path.Combine(basePath, "canopy")      
 
     let internal path = Path.Combine(serviceRoot, "CanopyResults", "canopy_results.json")   
     
     let internal url =
         match isInKubernetes || isInContainer with
-        | true  -> @"http://canopy-api/" //For Docker networking
+        | true  -> @"http://canopy-api/" //For Docker networking //For Kubernetes
         | false -> @"http://kodis.somee.com/api/"
 
     let [<Literal>] internal apiKeyTest = "test747646s5d4fvasfd645654asgasga654a6g13a2fg465a4fg4a3"
