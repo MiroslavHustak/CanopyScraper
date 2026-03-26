@@ -22,5 +22,5 @@ COPY publish/ .
 ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER=/usr/bin/chromedriver
 ENV PATH="/usr/lib/chromium/:${PATH}"
-RUN mkdir -p /data/CanopyResults /data/jsonLinks /data/logging
+# RUN mkdir -p /data/CanopyResults /data/jsonLinks /data/logging
 CMD ["dotnet", "CanopyScraper.dll"]

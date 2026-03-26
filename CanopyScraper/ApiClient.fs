@@ -48,10 +48,10 @@ module ApiClient =
                                 let! _ = fInfodat.Exists |> Option.ofBool, Error (sprintf "Soubor %s nenalezen" path) 
                      
                                 use fs = new FileStream(filepath, FileMode.Open, FileAccess.Read, FileShare.None) 
-                                let! _ = fs |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                        
+                                let! _ = fs |> Option.ofNull', Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                        
                         
                                 use reader = new StreamReader(fs)
-                                let! _ = reader |> Option.ofNull, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath) 
+                                let! _ = reader |> Option.ofNull', Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath) 
                     
                                 let jsonString = reader.ReadToEnd()
                                 let! jsonString = jsonString |> Option.ofNullEmpty, Error (sprintf "%s%s" "Chyba při čtení dat ze souboru " filepath)                      

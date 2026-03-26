@@ -25,7 +25,7 @@ module Serialisation =
                             let! json = json, Error (sprintf "%s%s" "Zadané hodnoty nebyly uloženy, chyba při serializaci do " jsonFile)
     
                             use writer = new StreamWriter(path, false)  
-                            let! _ = writer |> Option.ofNull, Error (sprintf "%s%s" "Zadané hodnoty nebyly uloženy, chyba při serializaci do " jsonFile)
+                            let! _ = writer |> Option.ofNull', Error (sprintf "%s%s" "Zadané hodnoty nebyly uloženy, chyba při serializaci do " jsonFile)
                             writer.Write json
 
                             return Ok ()
