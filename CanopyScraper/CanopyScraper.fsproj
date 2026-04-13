@@ -14,6 +14,7 @@
 		<Compile Include="InputData.fs" />
 		<Compile Include="ThothCoders.fs" />
 		<Compile Include="Serialization.fs" />
+		<Compile Include="EdgeDriver.fs" />
 		<Compile Include="ApiClient.fs" />
 		<Compile Include="ProgramChrome.fs" />
 		<Compile Include="Program.fs" />

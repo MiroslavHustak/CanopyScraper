@@ -18,12 +18,27 @@ module InteractiveHelpers =
 module ProcessHelpers =   
 
     let internal killEdgeZombies () =
+
         try
-            Process.GetProcessesByName("msedge") 
-            |> Array.iter (fun p -> try p.Kill() with _ -> ())
-         
-            Process.GetProcessesByName("msedgedriver")
-            |> Array.iter (fun p -> try p.Kill() with _ -> ())
+            [
+                "msedgedriver"
+                "msedge"
+                "MicrosoftWebDriver"
+            ]
+            |> List.iter
+                (fun name 
+                    ->
+                    Process.GetProcessesByName name
+                    |> Array.iter 
+                        (fun p 
+                            ->
+                            try 
+                                p.Kill()
+                                p.WaitForExit 3000 |> ignore
+                            with 
+                            | _ -> ()
+                        )
+                )
         with 
         | _ -> ()
 

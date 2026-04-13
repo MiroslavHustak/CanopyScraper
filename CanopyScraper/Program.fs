@@ -14,6 +14,7 @@ open Serialization.Serialisation
 open Helpers.ProcessHelpers
 open Helpers.Haskell_IO_Monad_Simulation
 
+
 module MyCanopy = 
 
     let private withSuppressedCanopyNoise (f : unit -> 'a) : 'a =
@@ -84,7 +85,7 @@ module MyCanopy =
                    try
                        canopy.configuration.edgeDir <- pathToDriver
    
-                       let service = EdgeDriverService.CreateDefaultService(canopy.configuration.edgeDir)
+                       let service = EdgeDriverService.CreateDefaultService canopy.configuration.edgeDir // TODO check why not "use"
                        service.HideCommandPromptWindow <- true
            
                        let options = EdgeOptions()
@@ -105,7 +106,7 @@ module MyCanopy =
                                ]
    
                        options.AddAdditionalCapability("ms:edgeOptions", edgeOptsInner)
-                       let driver = new EdgeDriver(service, options)
+                       let driver = new EdgeDriver(service, options) // TODO check why not "use"
                        canopy.classic.browser <- driver
                        canopy.configuration.compareTimeout <- 100.0
    
