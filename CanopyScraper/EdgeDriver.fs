@@ -178,7 +178,7 @@ module EdgeDriver =
                         eprintfn "Driver moved to: %s" finalPath
                         Directory.Delete(extractPath, true)
                         eprintfn "Done! Driver is located at: %s" finalPath
-                        eprintfn "******************"                        
+                        eprintfn "%s" <| String.replicate 50 "="                        
 
                         return ()
 
