@@ -24,6 +24,7 @@ module ProcessHelpers =
                 "msedgedriver"
                 "msedge"
                 "MicrosoftWebDriver"
+                "msedgewebview2"
             ]
             |> List.iter
                 (fun name 
@@ -34,7 +35,7 @@ module ProcessHelpers =
                             ->
                             try 
                                 p.Kill()
-                                p.WaitForExit 3000 |> ignore
+                                p.WaitForExit 3000 |> ignore<bool>
                             with 
                             | _ -> ()
                         )

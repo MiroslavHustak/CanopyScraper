@@ -7,7 +7,7 @@ open System.Net
 open FsHttp
 open Thoth.Json.Net
 
-open Settings.Settings
+open Settings.SettingsCanopy
 
 open Helpers
 open Helpers.Builders

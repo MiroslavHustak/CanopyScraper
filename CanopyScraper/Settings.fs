@@ -5,7 +5,7 @@ open System.IO
 
 open Helpers
 
-module Settings = 
+module SettingsCanopy = 
 
     //let [<Literal>] internal path = @"CanopyResults/canopy_results.json"     
     
@@ -46,3 +46,13 @@ module Settings =
                 | true  -> @"c:\temp\driver"
                 | false -> @"/usr/bin"
             )
+
+module SettingsEdgeDriver = 
+
+    let [<Literal>] internal zipPath = @"g:\edgedriver_win64.zip"
+    let [<Literal>] private finalDir = @"c:\temp\driver"
+    let [<Literal>] internal versionUri = @"https://msedgedriver.microsoft.com/LATEST_STABLE"
+    let [<Literal>] internal subKeyPath = @"SOFTWARE\Microsoft\Edge\BLBeacon"
+
+    let internal extractPath = Path.Combine(finalDir, "temporary")
+    let internal finalPath = Path.Combine(finalDir, "MicrosoftWebDriver.exe")

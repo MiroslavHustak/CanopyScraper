@@ -7,7 +7,7 @@ open System.Threading
 open OpenQA.Selenium.Chrome
 
 open Data.InputData
-open Settings.Settings
+open Settings.SettingsCanopy
 open Serialization.Serialisation
 
 open Helpers.ProcessHelpers
@@ -60,18 +60,23 @@ module MyCanopyChrome =
 
                 let scrapeGeneral () =
                     safeElements "a"
-                    |> List.map (fun item ->
-                        let href = string <| item.GetAttribute("href")
-                        match href.EndsWith "pdf" with
-                        | true -> Some href
-                        | false -> None
-                    )
+                    |> List.map
+                        (fun item 
+                            ->
+                            let href = string <| item.GetAttribute "href"
+
+                            match href.EndsWith "pdf" with
+                            | true  -> Some href
+                            | false -> None
+                        )
 
                 let clickCondition () =
                     try
                         match safeElementWithText "a" "Další" with
-                        | Some nextButton -> nextButton.Displayed && nextButton.Enabled
-                        | None -> false
+                        | Some nextButton 
+                            -> nextButton.Displayed && nextButton.Enabled
+                        | None
+                            -> false
                     with
                     _ -> false
 
@@ -87,7 +92,7 @@ module MyCanopyChrome =
                         let service = ChromeDriverService.CreateDefaultService()
                         service.HideCommandPromptWindow <- true
 
-                        let options = ChromeOptions()
+                        let options = ChromeOptions ()
                         options.AddArgument("--headless")
                         options.AddArgument("--disable-gpu")
                         options.AddArgument("--no-sandbox")
@@ -109,7 +114,7 @@ module MyCanopyChrome =
                 // ----------- Scraping functions -----------
                 let changesLinks () = 
             
-                    match startHeadlessChrome() with
+                    match startHeadlessChrome () with
                     | Error _ 
                         -> []
                     | Ok _
@@ -319,7 +324,7 @@ module MyCanopyChrome =
             
                     match Directory.Exists dir with
                     | true  -> ()
-                    | false -> Directory.CreateDirectory dir |> ignore
+                    | false -> Directory.CreateDirectory dir |> ignore<DirectoryInfo>
 
                     runIO <| serializeWithThothSync list path
                 with

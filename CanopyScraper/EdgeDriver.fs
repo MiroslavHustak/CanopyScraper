@@ -10,19 +10,13 @@ open Microsoft.Win32
 open FsHttp
 open FsToolkit.ErrorHandling
 
+open Settings.SettingsEdgeDriver
+
 open Helpers
 open Helpers.ProcessHelpers
 
 module EdgeDriver = 
 
-    let [<Literal>] private zipPath = @"g:\edgedriver_win64.zip"
-    let [<Literal>] private finalDir = @"c:\temp\driver"
-    let [<Literal>] private versionUri = @"https://msedgedriver.microsoft.com/LATEST_STABLE"
-    let [<Literal>] private subKeyPath = @"SOFTWARE\Microsoft\Edge\BLBeacon"
-
-    let private extractPath = Path.Combine(finalDir, "temporary")
-    let private finalPath = Path.Combine(finalDir, "MicrosoftWebDriver.exe")
-    
     let private getDriverVersion path =
 
         try

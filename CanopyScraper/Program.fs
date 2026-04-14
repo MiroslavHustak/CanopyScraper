@@ -8,12 +8,11 @@ open OpenQA.Selenium.Edge
 
 open Data.InputData
 
-open Settings.Settings
+open Settings.SettingsCanopy
 open Serialization.Serialisation
 
 open Helpers.ProcessHelpers
 open Helpers.Haskell_IO_Monad_Simulation
-
 
 module MyCanopy = 
 
@@ -66,7 +65,7 @@ module MyCanopy =
                     |> List.map 
                         (fun item 
                             ->                                                     
-                            let href = string <| item.GetAttribute("href")
+                            let href = string <| item.GetAttribute "href"
                             match href.EndsWith "pdf" with
                             | true  -> Some href     
                             | false -> None                                                                    
@@ -75,8 +74,10 @@ module MyCanopy =
                 let clickCondition () =
                     try                             
                         match safeElementWithText "a" "Další" with
-                        | Some nextButton -> nextButton.Displayed && nextButton.Enabled
-                        | None -> false
+                        | Some nextButton
+                            -> nextButton.Displayed && nextButton.Enabled
+                        | None
+                            -> false
                     with
                     | _ -> false  
 
@@ -331,7 +332,7 @@ module MyCanopy =
             
                     match Directory.Exists dir with
                     | true  -> ()
-                    | false -> Directory.CreateDirectory dir |> ignore
+                    | false -> Directory.CreateDirectory dir |> ignore<DirectoryInfo>
 
                     runIO <| serializeWithThothSync list path
                 with
