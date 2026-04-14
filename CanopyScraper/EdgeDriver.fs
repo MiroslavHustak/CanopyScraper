@@ -26,7 +26,7 @@ module EdgeDriver =
     let private getDriverVersion path =
 
         try
-            let psi = Diagnostics.ProcessStartInfo()
+            let psi = Diagnostics.ProcessStartInfo() //psi process start info   
             psi.FileName <- path
             psi.Arguments <- "--version"
             psi.RedirectStandardOutput <- true
@@ -45,45 +45,40 @@ module EdgeDriver =
             printfn "DRIVER EX: %s" <| string ex.Message
             None
       
-    let private getEdgeVersion () =
+    let private getEdgeVersion () =       
         
-        let attempts = 
-            [
-                fun () 
-                    ->
-                    use hive = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64)
-                    hive.OpenSubKey subKeyPath
-                fun ()
-                    ->
-                    use hive = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32)
-                    hive.OpenSubKey subKeyPath
-                // HKLM fallbacks in case it differs on another machine
-                fun () 
-                    ->
-                    use hive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
-                    hive.OpenSubKey subKeyPath
-                fun () 
-                    ->
-                    use hive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
-                    hive.OpenSubKey subKeyPath
-            ]
-    
-        attempts 
+        [
+            fun () 
+                ->
+                use hive = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64)
+                hive.OpenSubKey subKeyPath
+            fun ()
+                ->
+                use hive = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry32)
+                hive.OpenSubKey subKeyPath
+            // HKLM fallbacks in case it differs on another machine
+            fun () 
+                ->
+                use hive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64)
+                hive.OpenSubKey subKeyPath
+            fun () 
+                ->
+                use hive = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32)
+                hive.OpenSubKey subKeyPath
+        ] 
         |> List.tryPick
             (fun openKey 
                 ->
-                try
-                    let key = openKey()
-
-                    match key with
-                    | null 
-                        ->
-                        None
-                    | k ->
-                        use k = k
-                        k.GetValue("version")
-                        |> Option.ofNullEmptySpace
-                  
+                try                    
+                    openKey() 
+                    |> Option.ofNull'
+                    |> Option.bind
+                        (fun k 
+                            ->
+                            use k = k
+                            k.GetValue "version"
+                            |> Option.ofNullEmptySpace
+                        )                  
                 with
                 | _ -> None
             )
@@ -92,7 +87,7 @@ module EdgeDriver =
 
         v.Trim().Split('.')
         |> Array.tryHead
-        |> Option.bind (fun s -> match System.Int32.TryParse(s) with true, n -> Some n | _ -> None)   
+        |> Option.bind (fun s -> match Int32.TryParse s with true, n -> Some n | _ -> None)   
      
     let private getLatestEdgeDriver () =
 
@@ -198,8 +193,7 @@ module EdgeDriver =
                         Directory.Delete(extractPath, true)
 
                         eprintfn "Done! Driver is located at: %s" finalPath
-                        eprintfn "******************"
-                        eprintfn "The relevant scraping process is continuing ... "
+                        eprintfn "******************"                        
 
                         return ()
 
