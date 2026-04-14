@@ -110,11 +110,8 @@ module EdgeDriver =
                         |> Async.map Ok
 
                     let cleanVersion = version.Trim()
-
                     eprintfn "It is necessary to download the latest stable version: %s" cleanVersion
-
-                    let downloadUrl = sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" cleanVersion
-                 
+                    let downloadUrl = sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" cleanVersion                 
                     eprintfn "Downloading from: %s" downloadUrl
 
                     try
@@ -150,7 +147,6 @@ module EdgeDriver =
                             |> Async.map Ok
 
                         eprintfn "Download complete: %s" zipPath
-
                         killEdgeZombies ()
                         
                         try
@@ -164,9 +160,7 @@ module EdgeDriver =
                         | _ -> ()
 
                         Directory.CreateDirectory extractPath |> ignore<DirectoryInfo>
-
                         eprintfn "Extracting to: %s" extractPath
-
                         ZipFile.ExtractToDirectory(zipPath, extractPath)
 
                         try
@@ -181,11 +175,8 @@ module EdgeDriver =
                             |> Option.toResult (sprintf "Could not find msedgedriver.exe in extracted archive")
                         
                         File.Move(exeFile, finalPath, true)
-
                         eprintfn "Driver moved to: %s" finalPath
-
                         Directory.Delete(extractPath, true)
-
                         eprintfn "Done! Driver is located at: %s" finalPath
                         eprintfn "******************"                        
 
