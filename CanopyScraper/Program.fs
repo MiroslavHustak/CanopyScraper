@@ -86,7 +86,7 @@ module MyCanopy =
                    try
                        canopy.configuration.edgeDir <- pathToDriver
    
-                       let service = EdgeDriverService.CreateDefaultService canopy.configuration.edgeDir // TODO check why not "use"
+                       let service = EdgeDriverService.CreateDefaultService canopy.configuration.edgeDir // not "use" - see the note at "let driver = ..."
                        service.HideCommandPromptWindow <- true
            
                        let options = EdgeOptions()
@@ -107,11 +107,11 @@ module MyCanopy =
                                ]
    
                        options.AddAdditionalCapability("ms:edgeOptions", edgeOptsInner)
-                       let driver = new EdgeDriver(service, options) // TODO check why not "use"
-                       canopy.classic.browser <- driver
+                       let driver = new EdgeDriver(service, options) // not "use", driver lifetime extends beyond this block
+                       canopy.classic.browser <- driver  //the ownership of the driver passed to canopy, so it will be disposed by canopy.classic.quit() in the end of each function
                        canopy.configuration.compareTimeout <- 100.0
    
-                       Ok ()
+                       Ok ()  //if "use" is used, the driver would be disposed immediately after the block   
                    with
                    | ex 
                        ->
@@ -168,7 +168,7 @@ module MyCanopy =
                             | _ -> []
 
                         finally                     
-                            canopy.classic.quit()
+                            canopy.classic.quit() //the driver together with the service will be disposed here
                             Thread.Sleep 1200
                             killEdgeZombies ()
         
@@ -311,7 +311,7 @@ module MyCanopy =
                             killEdgeZombies ()
         
                 try
-                    printfn "=== Starting changesLinks() ==="
+                    printfn "\n=== Starting changesLinks() ==="
                     let list2 = changesLinks () |> List.distinct
                     printfn "changesLinks found %d links" list2.Length
             

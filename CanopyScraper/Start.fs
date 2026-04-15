@@ -61,7 +61,6 @@ let main argv =
 
                printfn "Press any key to continue."
                Console.ReadKey() |> ignore<ConsoleKeyInfo>
-               eprintfn "The relevant scraping process is continuing ... "
 
                do! canopyResult >> runIO <| ()
 
