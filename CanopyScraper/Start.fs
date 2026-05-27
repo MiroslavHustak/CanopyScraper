@@ -12,7 +12,7 @@ open FsToolkit.ErrorHandling
 // Edge <=> Chrome/Kubernetes switch 
 //***************************************
 
-open MyCanopy.MyCanopy           //Edge
+open MyCanopy.KodisCanopy           //Edge
 //open MyCanopyChrome.MyCanopyChrome //Chrome // Kubernetes
 
 open MyCanopy.ApiClient
@@ -22,6 +22,7 @@ open Drivers.EdgeDriver
 open Helpers.ProcessHelpers
 open Helpers.InteractiveHelpers 
 open Helpers.Haskell_IO_Monad_Simulation
+
 
 [<EntryPoint>] 
 let main argv =      
@@ -62,7 +63,7 @@ let main argv =
                printfn "Press any key to continue."
                Console.ReadKey() |> ignore<ConsoleKeyInfo>
 
-               do! canopyResult >> runIO <| ()
+               do! canopyResultKodis >> runIO <| ()
 
                return eprintfn "Scraping and serialization completed successfully."
            }
@@ -70,7 +71,7 @@ let main argv =
         -> 
         result
             {
-                do! canopyResult >> runIO <| ()
+                //do! canopyResultKodis >> runIO <| ()
                 return eprintfn "Scraping and serialization completed successfully."
             }
 

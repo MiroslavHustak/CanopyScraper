@@ -17,7 +17,7 @@
 		<Compile Include="EdgeDriver.fs" />
 		<Compile Include="ApiClient.fs" />
 		<Compile Include="ProgramChrome.fs" />
-		<Compile Include="Program.fs" />
+		<Compile Include="Kodis.fs" />
 		<Compile Include="Start.fs" />
 		<None Include="Dockerfile" />
 		<Content Include="DockerCommands" />

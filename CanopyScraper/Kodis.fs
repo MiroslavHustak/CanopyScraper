@@ -14,7 +14,7 @@ open Serialization.Serialisation
 open Helpers.ProcessHelpers
 open Helpers.Haskell_IO_Monad_Simulation
 
-module MyCanopy = 
+module KodisCanopy = 
 
     let private withSuppressedCanopyNoise (f : unit -> 'a) : 'a =
 
@@ -52,12 +52,12 @@ module MyCanopy =
                 | _ -> None
             )
 
-    let internal canopyResult () = 
+    let internal canopyResultKodis () = 
         
          IO (fun ()
                 ->     
                 let urlsChanges = 
-                    2115 :: [ 2400 .. 2800 ]
+                    2115 :: [ 2400 .. 3200 ]
                     |> List.map (fun item -> sprintf "%s%s" "https://www.kodis.cz/changes/" (string item))
 
                 let scrapeGeneral () = 

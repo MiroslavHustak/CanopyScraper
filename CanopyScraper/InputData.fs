@@ -11,7 +11,7 @@ module InputData =
             "https://www.kodis.cz/lines/city?tab=MHD+Opava"
             "https://www.kodis.cz/lines/region?tab=232-293"
             "https://www.kodis.cz/lines/city?tab=MHD+Frýdek-Místek"
-            "https://www.kodis.cz/lines/region?tab=331-392"
+            "https://www.kodis.cz/lines/region?tab=331-398"
             "https://www.kodis.cz/lines/city?tab=MHD+Havířov"
             "https://www.kodis.cz/lines/region?tab=440-465"
             "https://www.kodis.cz/lines/city?tab=MHD+Karviná"
@@ -31,5 +31,5 @@ module InputData =
             "https://www.kodis.cz/lines/train?tab=R8-R62"
             "https://www.kodis.cz/lines/city?tab=NAD+MHD"
             "https://www.kodis.cz/lines/region?tab=NAD" 
-            "https://www.kodis.cz/lines/boat?tab=Lodní+doprava"
+            "https://www.kodis.cz/lines/boat?tab=Lodní+doprava" 
         ]
