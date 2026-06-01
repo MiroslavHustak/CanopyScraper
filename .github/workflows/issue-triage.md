@@ -15,10 +15,6 @@ permissions: read-all
 
 network: defaults
 
-engine:
-  id: openai
-  model: gpt-4o
-
 safe-outputs:
   add-labels:
     max: 5
