@@ -15,9 +15,9 @@ permissions: read-all
 
 network: defaults
 
-# # This workflow runs often, so you can use a small model to keep costs down.
-# engine:
-#   model: small
+engine:
+  id: openai
+  model: gpt-4o
 
 safe-outputs:
   add-labels:
@@ -34,7 +34,7 @@ tools:
   web-fetch:
   github:
     toolsets: [issues, labels]
-    min-integrity: none # This workflow is allowed to examine and comment on any issues
+    min-integrity: none
 
 timeout-minutes: 10
 ---

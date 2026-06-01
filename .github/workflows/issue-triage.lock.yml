@@ -1340,7 +1340,7 @@ jobs:
       - activation
       - agent
       - detection
-    if: (!cancelled()) && needs.agent.result != 'skipped' && needs.detection.result == 'success'
+    if: (!cancelled()) && needs.agent.result != 'skipped' && (needs.detection.result == 'success' || needs.detection.result == 'skipped')
     runs-on: ubuntu-slim
     permissions:
       contents: read
