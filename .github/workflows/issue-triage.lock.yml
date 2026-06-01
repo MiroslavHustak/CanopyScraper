@@ -56,6 +56,18 @@ on:
     types:
     - opened
     - reopened
+  workflow_dispatch:
+      inputs:
+        aw_context:
+          default: ""
+          description: "Agent caller context"
+          required: false
+          type: string
+        command:
+          default: ""
+          description: "Optional command"
+          required: false
+          type: string 
 
 permissions: {}
 
