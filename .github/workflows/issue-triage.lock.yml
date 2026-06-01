@@ -421,7 +421,7 @@ jobs:
           mkdir -p /tmp/gh-aw/safeoutputs
           mkdir -p /tmp/gh-aw/mcp-logs/safeoutputs
           cat > "${RUNNER_TEMP}/gh-aw/safeoutputs/config.json" << 'GH_AW_SAFE_OUTPUTS_CONFIG_8b58269c449422ae_EOF'
-          {"add_comment":{"max":1},"add_labels":{"max":5},"close_issue":{"max":1,"state_reason":"not_planned","target":"triggering"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"true"},"report_incomplete":{},"set_issue_type":{"max":1}}
+          {"add_comment":{"max":1},"add_labels":{"max":5},"close_issue":{"max":1,"state_reason":"not_planned","target":"triggering"},"create_report_incomplete_issue":{},"missing_data":{},"missing_tool":{},"noop":{"max":1,"report-as-issue":"false"},"report_incomplete":{},"set_issue_type":{"max":1}}
           GH_AW_SAFE_OUTPUTS_CONFIG_8b58269c449422ae_EOF
       - name: Generate Safe Outputs Tools
         env:

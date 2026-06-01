@@ -85,4 +85,3 @@ module SafeFullPath =
                 with
                 | _ -> None
         )
-   
