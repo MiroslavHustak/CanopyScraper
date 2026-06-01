@@ -1,9 +1,17 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.14.36908.2 d17.14
+# Visual Studio Version 18
+VisualStudioVersion = 18.6.11822.322 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CanopyScraper", "CanopyScraper\CanopyScraper.fsproj", "{82A2A76E-0E37-4170-84F9-F4F483E3C88C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{A72E8D20-130F-4FCA-8CCF-02337CAC3C91}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{812C7CE7-FD77-4BB5-9B3C-B5E086949365}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\issue-triage.lock.yml = .github\workflows\issue-triage.lock.yml
+		.github\workflows\issue-triage.md = .github\workflows\issue-triage.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -18,6 +26,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{812C7CE7-FD77-4BB5-9B3C-B5E086949365} = {A72E8D20-130F-4FCA-8CCF-02337CAC3C91}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {8E24C4D0-7E04-4A83-A11F-E7A62267BB1A}
