@@ -130,7 +130,5 @@ let main argv =
         -> 
         printfn "Canopy (F#) web testing tool."
         mainProcess () |> ignore<endTime>
-    
-        
 
     0
