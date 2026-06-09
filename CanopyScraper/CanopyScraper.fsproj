@@ -34,4 +34,8 @@
 		<PackageReference Update="FSharp.Core" Version="8.0.401" />
 	</ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="bin\Release\net8.0\ShutDownMsg\" />
+	</ItemGroup>
+
 </Project>

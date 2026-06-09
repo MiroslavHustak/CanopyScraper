@@ -122,7 +122,7 @@ let main argv =
                   sprintf "The end time: %02i:%02d:%02d" result.hourEnd result.minuteEnd result.secondEnd
                 ]
             (runIO <| serializeWithThothSync list pathShutDownMsg) |> ignore<Result<unit, string>> 
-            System.Diagnostics.Process.Start("shutdown", "/s /t 30") |> ignore<Diagnostics.Process>
+            System.Diagnostics.Process.Start("shutdown", "/s /t 60") |> ignore<Diagnostics.Process>
         | _ -> 
             //Console.ReadKey() |> ignore<ConsoleKeyInfo> 
             mainProcess () |> ignore<endTime>
