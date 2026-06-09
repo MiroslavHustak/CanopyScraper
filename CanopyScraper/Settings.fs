@@ -27,7 +27,8 @@ module SettingsCanopy =
 
     let private serviceRoot = basePath // root for this service's data // if the path logic is to be changed, use Path.Combine like Path.Combine(basePath, "canopy")      
 
-    let internal path = Path.Combine(serviceRoot, "CanopyResults", "canopy_results.json")   
+    let internal path = Path.Combine(serviceRoot, "CanopyResults", "canopy_results.json") 
+    let internal pathShutDownMsg = Path.Combine(serviceRoot, "ShutDownMsg", "shutdownMsg.json")  
     
     let internal url =
         match isInKubernetes || isInContainer with

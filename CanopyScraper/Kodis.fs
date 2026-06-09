@@ -334,7 +334,7 @@ module KodisCanopy =
                     | true  -> ()
                     | false -> Directory.CreateDirectory dir |> ignore<DirectoryInfo>
 
-                    runIO <| serializeWithThothSync list path
+                    runIO <| serializeWithThothSync list path                    
                 with
                 | ex -> 
                     eprintfn "CRITICAL ERROR: %s" ex.Message

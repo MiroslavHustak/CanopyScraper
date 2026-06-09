@@ -19,14 +19,24 @@ open MyCanopy.ApiClient
 
 open Drivers.EdgeDriver
 
+open Settings.SettingsCanopy
+open Serialization.Serialisation
+
 open Helpers.ProcessHelpers
 open Helpers.InteractiveHelpers 
 open Helpers.Haskell_IO_Monad_Simulation
 
+type [<Struct>] private endTime =
+    {
+        nowEnd : DateTime
+        hourEnd : int
+        minuteEnd : int
+        secondEnd : int
+    }
 
 [<EntryPoint>] 
-let main argv =      
-    
+let main argv =   
+
     match Environment.OSVersion.Platform = PlatformID.Win32NT with
     | true  -> killEdgeZombies () 
     | false -> killChromeZombies () 
@@ -40,67 +50,87 @@ let main argv =
     let hourStart = nowStart.Hour 
     let minuteStart = nowStart.Minute 
     let secondStart = nowStart.Second
+
+    let mainProcess () = 
+
+        match Environment.OSVersion.Platform = PlatformID.Win32NT with
+        | true  
+            -> 
+            result
+               {    
+                   do! ensureDriver ()
+                   killEdgeZombies ()
+
+                   printfn "Press any key to continue."
+                   Console.ReadKey() |> ignore<ConsoleKeyInfo>
+
+                   do! canopyResultKodis >> runIO <| ()
+
+                   return eprintfn "Scraping and serialization completed successfully."
+               }
+        | false
+            -> 
+            result
+                {
+                    //do! canopyResultKodis >> runIO <| ()
+                    return eprintfn "Scraping and serialization completed successfully."
+                }
+
+        |> Result.defaultWith (fun err -> eprintfn "A problem appeared: %s" err)     
+
+        let result : ResponsePut = putToRestApiTest >> runIO <| ()
+
+        printfn "%s" result.Message1 
+        printfn "%s" result.Message2     
+
+        match Environment.OSVersion.Platform = PlatformID.Win32NT with
+        | true  -> killEdgeZombies () 
+        | false -> killChromeZombies () 
+
+        let nowEnd = DateTime.Now
+        let hourEnd = nowEnd.Hour 
+        let minuteEnd = nowEnd.Minute 
+        let secondEnd = nowEnd.Second
+
+        printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
+        printfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
+
+        match isInKubernetes || isInContainer with
+        | false  
+            ->
+            printfn "Press any key to continue to the main page."
+            Console.ReadKey() |> ignore<ConsoleKeyInfo>
+            { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }
+        | _true 
+            -> 
+            { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }         
     
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
 
     match isInKubernetes || isInContainer with
     | false  
         ->
-        printfn "Canopy (F#) web testing tool. Press any key to continue."
-        Console.ReadKey() |> ignore<ConsoleKeyInfo>
+        printfn "Canopy (F#) web testing tool. Shutdown PC after finishing? [y/N]: "
+
+        match Console.ReadKey().Key with    
+        | ConsoleKey.Y
+            -> 
+            let result = mainProcess ()  
+            let list = 
+                [ sprintf "Scraping and serialization completed successfully at %02i:%02d:%02d." result.hourEnd result.minuteEnd result.secondEnd
+                  sprintf "The start time: %02i:%02d:%02d" hourStart minuteStart secondStart
+                  sprintf "The end time: %02i:%02d:%02d" result.hourEnd result.minuteEnd result.secondEnd
+                ]
+            (runIO <| serializeWithThothSync list pathShutDownMsg) |> ignore<Result<unit, string>> 
+            System.Diagnostics.Process.Start("shutdown", "/s /t 30") |> ignore<Diagnostics.Process>
+        | _ -> 
+            //Console.ReadKey() |> ignore<ConsoleKeyInfo> 
+            mainProcess () |> ignore<endTime>
     | true
         -> 
         printfn "Canopy (F#) web testing tool."
+        mainProcess () |> ignore<endTime>
     
-    match Environment.OSVersion.Platform = PlatformID.Win32NT with
-    | true  
-        -> 
-        result
-           {
-               do! ensureDriver ()
-               killEdgeZombies ()
-
-               printfn "Press any key to continue."
-               Console.ReadKey() |> ignore<ConsoleKeyInfo>
-
-               do! canopyResultKodis >> runIO <| ()
-
-               return eprintfn "Scraping and serialization completed successfully."
-           }
-    | false
-        -> 
-        result
-            {
-                //do! canopyResultKodis >> runIO <| ()
-                return eprintfn "Scraping and serialization completed successfully."
-            }
-
-    |> Result.defaultWith (fun err -> eprintfn "A problem appeared: %s" err)     
-
-    let result : ResponsePut = putToRestApiTest >> runIO <| ()
-
-    printfn "%s" result.Message1 
-    printfn "%s" result.Message2     
-
-    match Environment.OSVersion.Platform = PlatformID.Win32NT with
-    | true  -> killEdgeZombies () 
-    | false -> killChromeZombies () 
-
-    let nowEnd = DateTime.Now
-    let hourEnd = nowEnd.Hour 
-    let minuteEnd = nowEnd.Minute 
-    let secondEnd = nowEnd.Second
-
-    printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
-    printfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
-
-    match isInKubernetes || isInContainer with
-    | false  
-        ->
-        printfn "Press any key to continue to the main page."
-        Console.ReadKey() |> ignore<ConsoleKeyInfo>
-    | _true 
-        -> 
-        ()
+        
 
     0
