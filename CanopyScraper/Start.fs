@@ -51,7 +51,7 @@ let main argv =
     let minuteStart = nowStart.Minute 
     let secondStart = nowStart.Second
 
-    let mainProcess () = 
+    let mainProcess shutDownInvoked = 
 
         match Environment.OSVersion.Platform = PlatformID.Win32NT with
         | true  
@@ -61,74 +61,86 @@ let main argv =
                    do! ensureDriver ()
                    killEdgeZombies ()
 
-                   printfn "Press any key to continue."
+                   eprintfn "Press any key to continue"
                    Console.ReadKey() |> ignore<ConsoleKeyInfo>
 
                    do! canopyResultKodis >> runIO <| ()
 
-                   return eprintfn "Scraping and serialization completed successfully."
+                   return eprintfn "Scraping and serialization completed successfully"
                }
         | false
             -> 
             result
                 {
                     //do! canopyResultKodis >> runIO <| ()
-                    return eprintfn "Scraping and serialization completed successfully."
+                    return () //eprintfn "Scraping and serialization completed successfully"
                 }
 
-        |> Result.defaultWith (fun err -> eprintfn "A problem appeared: %s" err)     
-
-        let result : ResponsePut = putToRestApiTest >> runIO <| ()
-
-        printfn "%s" result.Message1 
-        printfn "%s" result.Message2     
-
-        match Environment.OSVersion.Platform = PlatformID.Win32NT with
-        | true  -> killEdgeZombies () 
-        | false -> killChromeZombies () 
-
-        let nowEnd = DateTime.Now
-        let hourEnd = nowEnd.Hour 
-        let minuteEnd = nowEnd.Minute 
-        let secondEnd = nowEnd.Second
-
-        printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
-        printfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
-
-        match isInKubernetes || isInContainer with
-        | false  
-            ->
-            printfn "Press any key to continue to the main page."
-            Console.ReadKey() |> ignore<ConsoleKeyInfo>
-            { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }
-        | _true 
-            -> 
-            { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }         
+        |> function
+            | Ok _ 
+                -> 
+                let result : ResponsePut = putToRestApiTest >> runIO <| ()
+                
+                eprintfn "%s" result.Message1 
+                eprintfn "%s" result.Message2     
+                
+                match Environment.OSVersion.Platform = PlatformID.Win32NT with
+                | true  -> killEdgeZombies () 
+                | false -> killChromeZombies () 
+                
+                let nowEnd = DateTime.Now
+                let hourEnd = nowEnd.Hour 
+                let minuteEnd = nowEnd.Minute 
+                let secondEnd = nowEnd.Second
+                
+                eprintfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
+                eprintfn "The end time: %02d:%02d:%02d" hourEnd minuteEnd secondEnd
+                
+                match isInKubernetes || isInContainer with
+                | false  
+                    ->
+                    eprintfn "Press any key to continue to the main page"
+                    shutDownInvoked |> function false -> Console.ReadKey() |> ignore<ConsoleKeyInfo> | true -> ()
+                    { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }
+                | _true 
+                    -> 
+                    { nowEnd = nowEnd; hourEnd = hourEnd; minuteEnd = minuteEnd; secondEnd = secondEnd }         
+            
+            | Error err
+                ->  
+                eprintfn "A problem appeared: %s" err
+                { nowEnd = DateTime.Now; hourEnd = DateTime.Now.Hour ; minuteEnd = DateTime.Now.Minute; secondEnd = DateTime.Now.Second }        
     
     printfn "\nThe start time: %02i:%02d:%02d" hourStart minuteStart secondStart
 
-    match isInKubernetes || isInContainer with
-    | false  
-        ->
-        printfn "Canopy (F#) web testing tool. Shutdown PC after finishing? [y/N]: "
+    try
+        match isInKubernetes || isInContainer with
+        | false  
+            ->
+            printfn "Canopy (F#) web testing tool. Shutdown PC after finishing? [y/N]: "
 
-        match Console.ReadKey().Key with    
-        | ConsoleKey.Y
+            match Console.ReadKey().Key with    
+            | ConsoleKey.Y
+                -> 
+                let shutDownInvoked = true
+                let result = mainProcess shutDownInvoked 
+                let list = 
+                    [ sprintf "Scraping and serialization completed successfully at %02i:%02d:%02d" result.hourEnd result.minuteEnd result.secondEnd
+                      sprintf "The start time: %02i:%02d:%02d" hourStart minuteStart secondStart
+                      sprintf "The end time: %02i:%02d:%02d" result.hourEnd result.minuteEnd result.secondEnd
+                    ]
+                (runIO <| serializeWithThothSync list pathShutDownMsg) |> ignore<Result<unit, string>> 
+                System.Diagnostics.Process.Start("shutdown", "/s /t 60") |> ignore<Diagnostics.Process>
+            | _ -> 
+                let shutDownInvoked = false
+                //Console.ReadKey() |> ignore<ConsoleKeyInfo> 
+                mainProcess shutDownInvoked |> ignore<endTime>
+        | true
             -> 
-            let result = mainProcess ()  
-            let list = 
-                [ sprintf "Scraping and serialization completed successfully at %02i:%02d:%02d." result.hourEnd result.minuteEnd result.secondEnd
-                  sprintf "The start time: %02i:%02d:%02d" hourStart minuteStart secondStart
-                  sprintf "The end time: %02i:%02d:%02d" result.hourEnd result.minuteEnd result.secondEnd
-                ]
-            (runIO <| serializeWithThothSync list pathShutDownMsg) |> ignore<Result<unit, string>> 
-            System.Diagnostics.Process.Start("shutdown", "/s /t 60") |> ignore<Diagnostics.Process>
-        | _ -> 
-            //Console.ReadKey() |> ignore<ConsoleKeyInfo> 
-            mainProcess () |> ignore<endTime>
-    | true
-        -> 
-        printfn "Canopy (F#) web testing tool."
-        mainProcess () |> ignore<endTime>
+            let shutDownInvoked = false
+            printfn "Canopy (F#) web testing tool."
+            mainProcess shutDownInvoked |> ignore<endTime>
+    with
+    | ex -> eprintfn "A fatal problem appeared: %s" (string ex.Message)
 
     0

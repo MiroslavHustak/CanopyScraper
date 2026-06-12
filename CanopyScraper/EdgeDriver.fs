@@ -25,18 +25,27 @@ module EdgeDriver =
             psi.Arguments <- "--version"
             psi.RedirectStandardOutput <- true
             psi.UseShellExecute <- false
+            
+            let fInfo = FileInfo path
+
+            match fInfo.Exists with  //potential TOCTOU caught in try with block
+            | false  
+                ->
+                printfn "Driver not found, automatic driver download and installation activated"
+                None
+            | true 
+                -> 
+                use p = Diagnostics.Process.Start psi
+                let output = p.StandardOutput.ReadToEnd().Trim()
+                p.WaitForExit()   
     
-            use p = Diagnostics.Process.Start psi
-            let output = p.StandardOutput.ReadToEnd().Trim()
-            p.WaitForExit()   
-    
-            // Find the token that looks like a version number x.x.x.x
-            output.Split(' ')
-            |> Array.tryFind (fun s -> s.Split('.').Length >= 3 && s.[0] |> System.Char.IsDigit)
+                // Find the token that looks like a version number x.x.x.x
+                output.Split(' ')
+                |> Array.tryFind (fun s -> s.Split('.').Length >= 3 && s.[0] |> System.Char.IsDigit)
     
         with 
-        | ex ->
-            printfn "DRIVER EX: %s" <| string ex.Message
+        | _ ->
+            printfn "Driver not found, automatic driver download and installation activated"
             None
       
     let private getEdgeVersion () =       
@@ -110,7 +119,7 @@ module EdgeDriver =
                         |> Async.map Ok
 
                     let cleanVersion = version.Trim()
-                    eprintfn "It is necessary to download the latest stable version: %s" cleanVersion
+                    eprintfn "The latest stable version will be downloaded: %s" cleanVersion
                     let downloadUrl = sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" cleanVersion                 
                     eprintfn "Downloading from: %s" downloadUrl
 
@@ -205,11 +214,13 @@ module EdgeDriver =
         let driverVersion  = getDriverVersion finalPath //exact version
         let browserVersion = getEdgeVersion () //exact version
 
-        printfn "EdgeVersion %s" (browserVersion |> Option.defaultValue "Unknown")
-        printfn "DriverVersion %s" (driverVersion |> Option.defaultValue "Unknown")
+        printfn "EdgeVersion: %s" (browserVersion |> Option.defaultValue "Unknown")
+        printfn "DriverVersion: %s" (driverVersion |> Option.defaultValue "Unknown")
 
         match browserVersion, driverVersion with    
         | Some browser, Some driver
             when browser = driver
-            -> Ok ()    
+            -> Ok ()   
+        | None, _ 
+            -> Error "Could not determine Edge browser version, ensure first that Edge is installed on this PC, then run this app again."    
         | _ -> getLatestEdgeDriver () |> Async.RunSynchronously 
