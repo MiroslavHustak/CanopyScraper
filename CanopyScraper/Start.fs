@@ -64,7 +64,7 @@ let main argv =
                    eprintfn "Press any key to continue"
                    Console.ReadKey() |> ignore<ConsoleKeyInfo>
 
-                   do! canopyResultKodis >> runIO <| ()
+                   //do! canopyResultKodis >> runIO <| ()
 
                    return eprintfn "Scraping and serialization completed successfully"
                }

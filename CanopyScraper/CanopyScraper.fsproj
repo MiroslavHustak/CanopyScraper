@@ -6,7 +6,6 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Compile Include="Secrets\ApiKeys.fs" />
 		<Content Update="Secrets\secrets.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</Content>
@@ -15,6 +14,7 @@
 		<Compile Include="OptionExtensions.fs" />
 		<Compile Include="Settings.fs" />
 		<Compile Include="Helpers.fs" />
+		<Compile Include="Secrets\ApiKeys.fs" />
 		<Compile Include="InputData.fs" />
 		<Compile Include="ThothCoders.fs" />
 		<Compile Include="Serialization.fs" />

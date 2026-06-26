@@ -5,6 +5,8 @@ open System.IO
 open FsToolkit.ErrorHandling
 
 open Thoth.Json.Net
+open Helpers.SafeFullPath
+open Helpers.Haskell_IO_Monad_Simulation
 
 type Secrets =
     {
@@ -23,12 +25,18 @@ module Secrets =
             )
 
     let internal loadApiKey (path : string) : Result<Secrets, string> =
-        try
-            let fullPath = Path.Combine(AppContext.BaseDirectory, path) //AppContext.BaseDirectory always points to where your compiled app lives, regardless of what the process working directory happens to be
-            let json = System.IO.File.ReadAllText fullPath
-            Decode.fromString decoder json
+        try            
+            match runIO << safeFullPathResult <| path with
+            | Ok path
+                -> 
+                let json = System.IO.File.ReadAllText path
+                Decode.fromString decoder json
+            | Error err
+                ->  
+                Error (sprintf "Failed to read secrets file: %s" err)
+          
         with
-        | ex -> Error (sprintf "Failed to read secrets file: %s" ex.Message)
+        | ex -> Error (sprintf "Failed to read secrets file: %s" (string ex.Message))
 
     (*
     Do <ItemGroup>
