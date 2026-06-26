@@ -66,13 +66,19 @@ module ApiClient =
                         let thothJsonPayload =                    
                             match getJsonString path with
                             | Ok jsonString -> jsonString                                  
-                            | Error _       -> String.Empty            
+                            | Error _       -> String.Empty   
+                            
+                        let apiKey =
+                            let apiKeySecretsPath = "Secrets\secrets.json" 
+                            match ApiKeys.Secrets.loadApiKey apiKeySecretsPath with
+                            | Ok secrets -> secrets.ApiKey              
+                            | Error _    -> String.Empty
                
                         let! response = 
                             http
                                 {
                                     PUT url
-                                    header "X-API-KEY" apiKeyTest 
+                                    header "X-API-KEY" apiKey 
                                     body 
                                     json thothJsonPayload
                                 }
