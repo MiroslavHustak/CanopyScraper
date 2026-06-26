@@ -13,8 +13,6 @@ type Secrets =
 
 module Secrets =
 
-    // let apiKeyInvalid = "test747646s5d4fvasfd645654asgasga654a6g13a2fg465a4fg4a3"  //WEB API
-
     let private decoder : Decoder<Secrets> =
         Decode.object
             (fun get
