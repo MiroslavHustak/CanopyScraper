@@ -54,289 +54,284 @@ module KodisCanopy =
 
     let internal canopyResultKodis () = 
         
-         IO (fun ()
-                ->     
-                let urlsChanges = 
-                    2115 :: [ 2400 .. 3200 ]
-                    |> List.map (fun item -> sprintf "%s%s" "https://www.kodis.cz/changes/" (string item))
-
-                let scrapeGeneral () = 
-                    safeElements "a"
-                    |> List.map 
-                        (fun item 
-                            ->                                                     
-                            let href = string <| item.GetAttribute "href"
-                            match href.EndsWith "pdf" with
-                            | true  -> Some href     
-                            | false -> None                                                                    
-                        )    
-
-                let clickCondition () =
-                    try                             
-                        match safeElementWithText "a" "Další" with
-                        | Some nextButton
-                            -> nextButton.Displayed && nextButton.Enabled
-                        | None
-                            -> false
-                    with
-                    | _ -> false  
-
-                let startHeadlessEdge () =
-
-                   try
-                       canopy.configuration.edgeDir <- pathToDriver
-   
-                       let service = EdgeDriverService.CreateDefaultService canopy.configuration.edgeDir // not "use" - see the note at "let driver = ..."
-                       service.HideCommandPromptWindow <- true
-           
-                       let options = EdgeOptions()
-   
-                       let edgeOptsInner = 
-                           dict
-                               [ 
-                                   "args", 
-                                       box 
-                                           [| 
-                                               "--headless=new"
-                                               "--disable-gpu" 
-                                               "--no-sandbox" 
-                                               "--disable-dev-shm-usage"
-                                               "--window-size=1920,1080"
-                                               "--disable-blink-features=AutomationControlled"
-                                           |] 
-                               ]
-   
-                       options.AddAdditionalCapability("ms:edgeOptions", edgeOptsInner)
-                       let driver = new EdgeDriver(service, options) // not "use", driver lifetime extends beyond this block
-                       canopy.classic.browser <- driver  //the ownership of the driver passed to canopy, so it will be disposed by canopy.classic.quit() in the end of each function
-                       canopy.configuration.compareTimeout <- 100.0
-   
-                       Ok ()  //if "use" is used, the driver would be disposed immediately after the block   
-                   with
-                   | ex 
-                       ->
-                       eprintfn "CRITICAL: Failed to start Edge driver: %s" (string ex.Message)
-                       eprintfn "Driver path: %s" canopy.configuration.edgeDir
-                       eprintfn "Make sure msedgedriver.exe matches your Edge version (edge://version/)"
-                       Error (string ex.Message)
-
-                let changesLinks () = 
-
-                    match startHeadlessEdge () with
-                    | Error _ 
-                        -> []
-                    | Ok _
-                        ->
-                        try
-                            try
-                                let linksShown () = 
-                                    Some (safeElements "ul > li > div" |> Seq.length >= 1)
-                  
-                                let scrapeUrl (url : string) =
-
-                                    try
-                                        canopy.classic.url url
-                                        Thread.Sleep 50  
-                                
-                                        let waitForWithTimeout (timeoutSeconds : float) (condition : unit -> bool option) =
-
-                                            let timeout = System.TimeSpan.FromSeconds timeoutSeconds
-                                            let sw = System.Diagnostics.Stopwatch.StartNew()
-                                
-                                            Seq.initInfinite id
-                                            |> Seq.takeWhile (fun _ -> sw.Elapsed < timeout)
-                                            |> Seq.tryPick (fun _ -> condition () |> Option.orElse (Thread.Sleep 250; None))
-                                            |> Option.defaultValue false                           
-
-                                        match waitForWithTimeout 5.0 linksShown with
-                                        | true 
-                                            ->
-                                            scrapeGeneral ()
-                                            |> List.choose id  
-                                            |> List.distinct
-                                            |> List.filter (fun item -> item.Contains urlKodis)
-                                        | false 
-                                            ->
-                                            []
-                                    with
-                                    | _ -> []
-
-                                urlsChanges 
-                                |> List.collect scrapeUrl
-                                |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
-                            with
-                            | _ -> []
-
-                        finally                     
-                            canopy.classic.quit() //the driver together with the service will be disposed here
-                            Thread.Sleep 1200
-                            killEdgeZombies ()
+        IO (fun () ->
         
-                let currentAndFutureLinks () = 
+            let urlsChanges = 
+                2115 :: [ 2400 .. 3200 ]
+                |> List.map (fun item -> sprintf "%s%s" "https://www.kodis.cz/changes/" (string item))
 
-                    match startHeadlessEdge () with
-                    | Error _ 
-                        -> []
-                    | Ok _
-                        ->
-                        try
-                            try
-                                let linksShown () = 
-                                    (safeElements ".Card_actions__HhB_f").Length >= 1               
+            let scrapeGeneral () = 
+                safeElements "a"
+                |> List.map 
+                    (fun item 
+                        ->                                                     
+                        let href = string <| item.GetAttribute "href"
+                        match href.EndsWith "pdf" with
+                        | true  -> Some href     
+                        | false -> None                                                                    
+                    )    
 
-                                let scrapeUrl (url : string) =
-                                    try
-                                        canopy.classic.url url
-
-                                        let pdfLinkList () =
-                                            Thread.Sleep 15000            
-                                
-                                            withSuppressedCanopyNoise
-                                                (fun () -> canopy.classic.waitFor linksShown)                                   
-                                
-                                            let buttons = 
-                                                withSuppressedCanopyNoise
-                                                    (fun () -> safeElements "button[title='Budoucí jízdní řády']")
-                                    
-                                            buttons
-                                            |> List.mapi 
-                                                (fun i button 
-                                                    -> 
-                                                    canopy.classic.click button
-                                                    Thread.Sleep 2000   
-                                            
-                                                    let result = scrapeGeneral ()                                       
-                                        
-                                                    match i = buttons.Length - 1 with 
-                                                    | true 
-                                                        ->
-                                                        safeElementWithText "button" "Budoucí jízdní řády"
-                                                        |> Option.iter (fun b -> canopy.classic.click b; Thread.Sleep 2000)
-                                                    | false 
-                                                        -> 
-                                                        ()
-
-                                                    canopy.classic.navigate canopy.classic.forward
-                                                    result
-                                                )
-                                            |> List.concat    
-                                            |> List.distinct   
-                                
-                                        let pdfLinkList1 = pdfLinkList () |> List.distinct
-
-                                        let pdfLinkList2 = 
-                                            Seq.initInfinite (fun _ -> clickCondition())
-                                            |> Seq.takeWhile ((=) true) 
-                                            |> Seq.collect
-                                                (fun _ 
-                                                    -> 
-                                                    try 
-                                                        safeElementWithText "a" "Další"
-                                                        |> Option.iter canopy.classic.click
-                                                        pdfLinkList ()
-                                                    with
-                                                    | _ -> []
-                                                )
-                                            |> Seq.distinct
-                                            |> Seq.toList                  
-
-                                        (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
-                                    with
-                                    | _ -> []
-
-                                urls 
-                                |> List.collect scrapeUrl 
-                                |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
-                            with
-                            | _ -> []
-
-                        finally
-                            canopy.classic.quit()
-                            Thread.Sleep 1200
-                            killEdgeZombies () 
-
-                let currentLinks () = 
-
-                    match startHeadlessEdge () with
-                    | Error _ 
-                        -> []
-                    | Ok _   
-                        ->
-                        try
-                            try
-                                let linksShown () = 
-                                    (safeElements ".Card_actions__HhB_f").Length >= 1
-                        
-                                let scrapeUrl (url : string) =
-                                    try
-                                        canopy.classic.url url
-                        
-                                        let pdfLinkList () =
-                                            Thread.Sleep 15000  
-                                            canopy.classic.waitFor linksShown  
-                                            scrapeGeneral ()  
-                                                
-                                        let pdfLinkList1 = pdfLinkList () |> List.distinct
-                        
-                                        let pdfLinkList2 = 
-                                            Seq.initInfinite (fun _ -> clickCondition())
-                                            |> Seq.takeWhile ((=) true) 
-                                            |> Seq.collect
-                                                (fun _ 
-                                                    -> 
-                                                    try 
-                                                        safeElementWithText "a" "Další"
-                                                        |> Option.iter canopy.classic.click
-                                                        pdfLinkList ()
-                                                    with
-                                                    | _ -> []
-                                                )
-                                            |> Seq.distinct
-                                            |> Seq.toList                  
-                        
-                                        (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
-                        
-                                    with
-                                    | _ -> []
-
-                                urls 
-                                |> List.collect scrapeUrl
-                                |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
-                            with
-                            | _ -> []
-
-                        finally
-                            canopy.classic.quit()
-                            Thread.Sleep 1200
-                            killEdgeZombies ()
-        
-                try
-                    printfn "\n=== Starting changesLinks() ==="
-                    let list2 = changesLinks () |> List.distinct
-                    printfn "changesLinks found %d links" list2.Length
-            
-                    printfn "\n=== Starting currentAndFutureLinks() ==="
-                    let currentFutureList = currentAndFutureLinks () |> List.distinct
-                    printfn "currentAndFutureLinks found %d links" currentFutureList.Length
-            
-                    printfn "\n=== Starting currentLinks() ==="
-                    let currentList = currentLinks () |> List.distinct
-                    printfn "currentLinks found %d links" currentList.Length
-            
-                    let list1 = (currentFutureList @ currentList) |> List.distinct
-                    let list = list2 @ list1
-            
-                    printfn "\n=== Total unique links: %d ===" list.Length
-
-                    let dir = Path.GetDirectoryName path
-            
-                    match Directory.Exists dir with
-                    | true  -> ()
-                    | false -> Directory.CreateDirectory dir |> ignore<DirectoryInfo>
-
-                    runIO <| serializeWithThothSync list path                    
+            let clickCondition () =
+                try                             
+                    match safeElementWithText "a" "Další" with
+                    | Some nextButton
+                        -> nextButton.Displayed && nextButton.Enabled
+                    | None
+                        -> false
                 with
-                | ex -> 
-                    eprintfn "CRITICAL ERROR: %s" ex.Message
-                    Error <| (sprintf "%s %s" <| string ex.Message <| " Error Canopy 001 combined")
+                | _ -> false  
+
+            let startHeadlessEdge () =
+
+                try
+                    canopy.configuration.edgeDir <- pathToDriver
+   
+                    let service = EdgeDriverService.CreateDefaultService canopy.configuration.edgeDir // not "use" - see the note at "let driver = ..."
+                    service.HideCommandPromptWindow <- true
+           
+                    let options = EdgeOptions()
+                    
+                    // --headless=new nejak prestalo fungovat, toz strcim okno mimo obrazovku --window-position=-32000,-32000",
+                    options.AddArguments(
+                          "--headless=new",
+                          "--disable-gpu",
+                          "--no-sandbox",
+                          "--disable-dev-shm-usage",
+                          "--window-size=1920,1080",
+                          "--window-position=-32000,-32000",
+                          "--disable-blink-features=AutomationControlled"
+                    )
+                    
+                    let driver = new EdgeDriver(service, options)
+                    canopy.classic.browser <- driver
+                    canopy.configuration.compareTimeout <- 100.0                                      
+   
+                    Ok ()  //if "use" is used, the driver would be disposed immediately after the block   
+                with
+                | ex 
+                    ->
+                    eprintfn "CRITICAL: Failed to start Edge driver: %s" (string ex.Message)
+                    eprintfn "Driver path: %s" canopy.configuration.edgeDir
+                    eprintfn "Make sure msedgedriver.exe matches your Edge version (edge://version/)"
+                    Error (string ex.Message)
+
+            let changesLinks () = 
+
+                match startHeadlessEdge () with
+                | Error _ 
+                    -> []
+                | Ok _
+                    ->
+                    try
+                        try
+                            let linksShown () = 
+                                Some (safeElements "ul > li > div" |> Seq.length >= 1)
+                  
+                            let scrapeUrl (url : string) =
+
+                                try
+                                    canopy.classic.url url
+                                    Thread.Sleep 50  
+                                
+                                    let waitForWithTimeout (timeoutSeconds : float) (condition : unit -> bool option) =
+
+                                        let timeout = System.TimeSpan.FromSeconds timeoutSeconds
+                                        let sw = System.Diagnostics.Stopwatch.StartNew()
+                                
+                                        Seq.initInfinite id
+                                        |> Seq.takeWhile (fun _ -> sw.Elapsed < timeout)
+                                        |> Seq.tryPick (fun _ -> condition () |> Option.orElse (Thread.Sleep 250; None))
+                                        |> Option.defaultValue false                           
+
+                                    match waitForWithTimeout 5.0 linksShown with
+                                    | true 
+                                        ->
+                                        scrapeGeneral ()
+                                        |> List.choose id  
+                                        |> List.distinct
+                                        |> List.filter (fun item -> item.Contains urlKodis)
+                                    | false 
+                                        ->
+                                        []
+                                with
+                                | _ -> []
+
+                            urlsChanges 
+                            |> List.collect scrapeUrl
+                            |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
+                        with
+                        | _ -> []
+
+                    finally                     
+                        canopy.classic.quit() //the driver together with the service will be disposed here
+                        Thread.Sleep 1200
+                        killEdgeZombies ()
+        
+            let currentAndFutureLinks () = 
+
+                match startHeadlessEdge () with
+                | Error _ 
+                    -> []
+                | Ok _
+                    ->
+                    try
+                        try
+                            let linksShown () = 
+                                (safeElements ".Card_actions__HhB_f").Length >= 1               
+
+                            let scrapeUrl (url : string) =
+                                try
+                                    canopy.classic.url url
+
+                                    let pdfLinkList () =
+                                        Thread.Sleep 15000            
+                                
+                                        withSuppressedCanopyNoise
+                                            (fun () -> canopy.classic.waitFor linksShown)                                   
+                                
+                                        let buttons = 
+                                            withSuppressedCanopyNoise
+                                                (fun () -> safeElements "button[title='Budoucí jízdní řády']")
+                                    
+                                        buttons
+                                        |> List.mapi 
+                                            (fun i button 
+                                                -> 
+                                                canopy.classic.click button
+                                                Thread.Sleep 2000   
+                                            
+                                                let result = scrapeGeneral ()                                       
+                                        
+                                                match i = buttons.Length - 1 with 
+                                                | true 
+                                                    ->
+                                                    safeElementWithText "button" "Budoucí jízdní řády"
+                                                    |> Option.iter (fun b -> canopy.classic.click b; Thread.Sleep 2000)
+                                                | false 
+                                                    -> 
+                                                    ()
+
+                                                canopy.classic.navigate canopy.classic.forward
+                                                result
+                                            )
+                                        |> List.concat    
+                                        |> List.distinct   
+                                
+                                    let pdfLinkList1 = pdfLinkList () |> List.distinct
+
+                                    let pdfLinkList2 = 
+                                        Seq.initInfinite (fun _ -> clickCondition())
+                                        |> Seq.takeWhile ((=) true) 
+                                        |> Seq.collect
+                                            (fun _ 
+                                                -> 
+                                                try 
+                                                    safeElementWithText "a" "Další"
+                                                    |> Option.iter canopy.classic.click
+                                                    pdfLinkList ()
+                                                with
+                                                | _ -> []
+                                            )
+                                        |> Seq.distinct
+                                        |> Seq.toList                  
+
+                                    (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
+                                with
+                                | _ -> []
+
+                            urls 
+                            |> List.collect scrapeUrl 
+                            |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
+                        with
+                        | _ -> []
+
+                    finally
+                        canopy.classic.quit()
+                        Thread.Sleep 1200
+                        killEdgeZombies () 
+
+            let currentLinks () = 
+
+                match startHeadlessEdge () with
+                | Error _ 
+                    -> []
+                | Ok _   
+                    ->
+                    try
+                        try
+                            let linksShown () = 
+                                (safeElements ".Card_actions__HhB_f").Length >= 1
+                        
+                            let scrapeUrl (url : string) =
+                                try
+                                    canopy.classic.url url
+                        
+                                    let pdfLinkList () =
+                                        Thread.Sleep 15000  
+                                        canopy.classic.waitFor linksShown  
+                                        scrapeGeneral ()  
+                                                
+                                    let pdfLinkList1 = pdfLinkList () |> List.distinct
+                        
+                                    let pdfLinkList2 = 
+                                        Seq.initInfinite (fun _ -> clickCondition())
+                                        |> Seq.takeWhile ((=) true) 
+                                        |> Seq.collect
+                                            (fun _ 
+                                                -> 
+                                                try 
+                                                    safeElementWithText "a" "Další"
+                                                    |> Option.iter canopy.classic.click
+                                                    pdfLinkList ()
+                                                with
+                                                | _ -> []
+                                            )
+                                        |> Seq.distinct
+                                        |> Seq.toList                  
+                        
+                                    (pdfLinkList1 @ pdfLinkList2) |> List.choose id  
+                        
+                                with
+                                | _ -> []
+
+                            urls 
+                            |> List.collect scrapeUrl
+                            |> List.filter (fun item -> not (excludeYears |> List.exists item.Contains))
+                        with
+                        | _ -> []
+
+                    finally
+                        canopy.classic.quit()
+                        Thread.Sleep 1200
+                        killEdgeZombies ()
+        
+            try
+                printfn "\n=== Starting changesLinks() ==="
+                let list2 = changesLinks () |> List.distinct
+                printfn "changesLinks found %d links" list2.Length
+            
+                printfn "\n=== Starting currentAndFutureLinks() ==="
+                let currentFutureList = currentAndFutureLinks () |> List.distinct
+                printfn "currentAndFutureLinks found %d links" currentFutureList.Length
+            
+                printfn "\n=== Starting currentLinks() ==="
+                let currentList = currentLinks () |> List.distinct
+                printfn "currentLinks found %d links" currentList.Length
+            
+                let list1 = (currentFutureList @ currentList) |> List.distinct
+                let list = list2 @ list1
+            
+                printfn "\n=== Total unique links: %d ===" list.Length
+
+                let dir = Path.GetDirectoryName path
+            
+                match Directory.Exists dir with
+                | true  -> ()
+                | false -> Directory.CreateDirectory dir |> ignore<DirectoryInfo>
+
+                runIO <| serializeWithThothSync list path                    
+            with
+            | ex -> 
+                eprintfn "CRITICAL ERROR: %s" ex.Message
+                Error <| (sprintf "%s %s" <| string ex.Message <| " Error Canopy 001 combined")
     )

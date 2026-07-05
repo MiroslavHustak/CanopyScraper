@@ -254,7 +254,6 @@ module EdgeDriver =
                             |> Async.map Ok
 
                         eprintfn "Download complete: %s" zipPath
-                        killEdgeZombies ()
                         
                         try
                             Directory.Delete(extractPath, true)
@@ -287,7 +286,7 @@ module EdgeDriver =
                         eprintfn "Done! Driver is located at: %s" finalPath
                         eprintfn "%s" <| String.replicate 50 "="                        
 
-                        return ()
+                        return killEdgeZombies ()
 
                     | None
                         ->

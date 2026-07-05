@@ -30,6 +30,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="canopy" Version="2.1.5" />
+		<PackageReference Include="Selenium.WebDriver" Version="4.35.0" />
 		<PackageReference Include="FsHttp" Version="15.0.3" />
 		<PackageReference Include="FsToolkit.ErrorHandling" Version="5.2.0" />
 		<PackageReference Include="Thoth.Json.Net" Version="12.0.0" />

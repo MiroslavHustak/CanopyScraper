@@ -55,4 +55,4 @@ module SettingsEdgeDriver =
     let [<Literal>] internal subKeyPath = @"SOFTWARE\Microsoft\Edge\BLBeacon"
 
     let internal extractPath = Path.Combine(finalDir, "temporary")
-    let internal finalPath = Path.Combine(finalDir, "MicrosoftWebDriver.exe")
+    let internal finalPath = Path.Combine(finalDir, "msedgedriver.exe")
