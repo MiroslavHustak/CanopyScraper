@@ -6,8 +6,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-		<Content Update="Secrets\secrets.json">
+		<Content Include="Secrets\secrets.json">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<Link>Secrets\secrets.json</Link>
 		</Content>
 		<Compile Include="CEBuilders.fs" />
 		<Compile Include="ResultExtensions.fs" />

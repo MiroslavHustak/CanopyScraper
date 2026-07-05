@@ -13,6 +13,7 @@ open Helpers
 open Helpers.Builders
 open Helpers.SafeFullPath
 open Helpers.Haskell_IO_Monad_Simulation
+open FsToolkit.ErrorHandling
 
 module ApiClient = 
 
@@ -68,12 +69,11 @@ module ApiClient =
                             | Ok jsonString -> jsonString                                  
                             | Error _       -> String.Empty   
                             
-                        let apiKey =
-                            let apiKeySecretsPath = "Secrets\secrets.json" 
-                            match ApiKeys.Secrets.loadApiKey apiKeySecretsPath with
+                        let apiKey =                             
+                            match ApiKeys.Secrets.loadApiKey "Secrets\secrets.json" with
                             | Ok secrets -> secrets.ApiKey              
                             | Error _    -> String.Empty
-               
+
                         let! response = 
                             http
                                 {

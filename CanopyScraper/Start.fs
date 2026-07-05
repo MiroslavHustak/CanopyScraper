@@ -61,10 +61,10 @@ let main argv =
                    do! ensureDriver ()
                    killEdgeZombies ()
 
-                   eprintfn "Press any key to continue"
+                   eprintfn "\nPress any key to continue"
                    Console.ReadKey() |> ignore<ConsoleKeyInfo>
 
-                   //do! canopyResultKodis >> runIO <| ()
+                   do! canopyResultKodis >> runIO <| ()
 
                    return eprintfn "Scraping and serialization completed successfully"
                }

@@ -91,8 +91,103 @@ module EdgeDriver =
         v.Trim().Split('.')
         |> Array.tryHead
         |> Option.bind (fun s -> match Int32.TryParse s with true, n -> Some n | _ -> None)   
-     
-    let private getLatestEdgeDriver () =
+
+
+    let private tryDownload (version: string) =
+
+        asyncResult
+            {
+                let downloadUrl = sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" version
+                eprintfn "Downloading from: %s" downloadUrl
+
+                let downloadRequest =
+                    http
+                        {
+                            GET downloadUrl
+                            header "User-Agent" "FsHttp/Windows"
+                        }
+
+                let! response =
+                    downloadRequest
+                    |> Request.sendAsync
+                    |> Async.map Ok
+
+                use response = response
+
+                match response.statusCode with
+                | HttpStatusCode.OK
+                    ->
+                    let! bytes =
+                        response.content.ReadAsByteArrayAsync()
+                        |> Async.AwaitTask
+                        |> Async.map Ok
+
+                    return Some bytes
+
+                | status
+                    ->
+                    eprintfn "Download for %s failed with status code: %A" version status
+                    return None
+            }
+
+    let private tryManualDownload () =  //last resort, ask the user to paste a link 
+
+        asyncResult
+            {
+                eprintfn "%s" <| String.replicate 50 "="
+                eprintfn "Automatic driver download failed for all known versions."
+                eprintfn "Paste a direct edgedriver_win64.zip URL, or just a version"
+                eprintfn "number (e.g. 150.0.4078.48), or press Enter to give up:"
+                
+                let input = 
+                    Console.ReadLine()
+                    |> Option.ofNullEmptySpace
+                    |> Option.map (fun s -> s.Trim())
+
+                match input with
+                | None 
+                    ->
+                    return None
+                | Some entry
+                    ->
+                    let manualUrl =
+                        match entry.StartsWith("http", StringComparison.OrdinalIgnoreCase) with
+                        | true  -> entry
+                        | false -> sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" entry
+
+                    eprintfn "Trying manually entered link: %s" manualUrl
+
+                    let downloadRequest =
+                        http
+                            {
+                                GET manualUrl
+                                header "User-Agent" "FsHttp/Windows"
+                            }
+
+                    let! response =
+                        downloadRequest
+                        |> Request.sendAsync
+                        |> Async.map Ok
+
+                    use response = response
+
+                    match response.statusCode with
+                    | HttpStatusCode.OK
+                        ->
+                        let! bytes =
+                            response.content.ReadAsByteArrayAsync()
+                            |> Async.AwaitTask
+                            |> Async.map Ok
+
+                        return Some bytes
+
+                    | status
+                        ->
+                        eprintfn "Manual link also failed with status code: %A" status
+                        return None
+            }
+
+    let private getLatestEdgeDriver (browserVersionFallback: string option) =
 
         asyncResult
             {                
@@ -119,37 +214,40 @@ module EdgeDriver =
                         |> Async.map Ok
 
                     let cleanVersion = version.Trim()
-                    eprintfn "The latest stable version will be downloaded: %s" cleanVersion
-                    let downloadUrl = sprintf "https://msedgedriver.microsoft.com/%s/edgedriver_win64.zip" cleanVersion                 
-                    eprintfn "Downloading from: %s" downloadUrl
+                    eprintfn "The latest stable version reported: %s" cleanVersion
 
                     try
                         File.Delete zipPath
                     with
                     | _ -> ()
 
-                    let downloadRequest =
-                        http
-                            {
-                                GET downloadUrl
-                                header "User-Agent" "FsHttp/Windows"
-                            }
+                    // Tier 1: the version reported by Microsoft's feed
+                    let! bytesOpt = tryDownload cleanVersion
 
-                    let! response2 =
-                        downloadRequest
-                        |> Request.sendAsync
-                        |> Async.map Ok
+                    // Tier 2: fall back to the exact installed browser version
+                    let! bytesOpt =
+                        match bytesOpt, browserVersionFallback with
+                        | Some _, _ 
+                            -> AsyncResult.ok bytesOpt
+                        | None, Some fallback when fallback <> cleanVersion
+                            ->
+                            eprintfn "Falling back to installed browser version: %s" fallback
+                            tryDownload fallback
+                        | None, _ 
+                            -> AsyncResult.ok None
 
-                    use response2 = response2
+                    
+                    //let! bytesOpt = AsyncResult.ok None  //for simulating a failure to test the manual download path
 
-                    match response2.statusCode with
-                    | HttpStatusCode.OK
+                    // Tier 3: last resort — ask the user to paste a link/version                    
+                    let! bytesOpt =
+                        match bytesOpt with
+                        | Some _ -> AsyncResult.ok bytesOpt
+                        | None   -> tryManualDownload ()
+
+                    match bytesOpt with
+                    | Some bytes
                         ->
-                        let! bytes =
-                            response2.content.ReadAsByteArrayAsync()
-                            |> Async.AwaitTask
-                            |> Async.map Ok
-                
                         do! 
                             File.WriteAllBytesAsync(zipPath, bytes) 
                             |> Async.AwaitTask
@@ -191,9 +289,9 @@ module EdgeDriver =
 
                         return ()
 
-                    | status
+                    | None
                         ->
-                        eprintf "Download failed with status code: %A" status
+                        eprintfn "Could not download a matching driver — gave up after manual attempt."
                         return ()
 
                 | status
@@ -201,26 +299,22 @@ module EdgeDriver =
                     eprintf "Version request failed with status code: %A" status
                     return ()
             }
-        |> AsyncResult.catch (fun ex -> string ex.Message)
-        
+        |> AsyncResult.catch (fun ex -> sprintf "%s %s" (string ex.Message) "#EdgeDriverError")
+
     let internal ensureDriver () =
         
-        //printfn "EdgeVersion %A" <| getEdgeVersion ()
-        //printfn "DriverVersion %A" <| getDriverVersion finalPath
-
-        //let driverVersion  = getDriverVersion finalPath |> Option.bind getMajorVersion //major version
-        //let browserVersion = getEdgeVersion () |> Option.bind getMajorVersion  //major version
-
-        let driverVersion  = getDriverVersion finalPath //exact version
-        let browserVersion = getEdgeVersion () //exact version
+        let driverVersion  = getDriverVersion finalPath
+        let browserVersion = getEdgeVersion ()
 
         printfn "EdgeVersion: %s" (browserVersion |> Option.defaultValue "Unknown")
         printfn "DriverVersion: %s" (driverVersion |> Option.defaultValue "Unknown")
 
+        //getLatestEdgeDriver browserVersion |> Async.RunSynchronously //for simulating a failure to test the manual download path, comment out the match below and uncomment this line
+                
         match browserVersion, driverVersion with    
         | Some browser, Some driver
             when browser = driver
             -> Ok ()   
         | None, _ 
             -> Error "Could not determine Edge browser version, ensure first that Edge is installed on this PC, then run this app again."    
-        | _ -> getLatestEdgeDriver () |> Async.RunSynchronously 
+        | _ -> getLatestEdgeDriver browserVersion |> Async.RunSynchronously

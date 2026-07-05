@@ -24,24 +24,31 @@ module Secrets =
                 }
             )
 
-    let internal loadApiKey (path : string) : Result<Secrets, string> =
-        try            
-            match runIO << safeFullPathResult <| path with
-            | Ok path
-                -> 
-                let json = System.IO.File.ReadAllText path
+    let internal loadApiKey2 (path : string) : Result<Secrets, string> =
+        try
+            let fullPath = runIO << safeFullPathResult <| path
+            match fullPath with
+            | Ok path 
+                ->
+                let json = System.IO.File.ReadAllText path// @"e:\source\repos\CanopyScraper\CanopyScraper\Secrets\secrets.json"
                 Decode.fromString decoder json
-            | Error err
-                ->  
-                Error (sprintf "Failed to read secrets file: %s" err)
-          
+                | Error err ->  Error (sprintf "Failed to read secrets file: %s" err)
+        with
+        | ex -> Error (sprintf "Failed to read secrets file: %s" (string ex.Message))
+
+    let internal loadApiKey (path : string) : Result<Secrets, string> =
+        try
+            let fullPath = Path.Combine(AppContext.BaseDirectory, path) //AppContext.BaseDirectory always points to where your compiled app lives, regardless of what the process working directory happens to be
+            let json = System.IO.File.ReadAllText fullPath
+            Decode.fromString decoder json
         with
         | ex -> Error (sprintf "Failed to read secrets file: %s" (string ex.Message))
 
     (*
     Do <ItemGroup>
     pridej
-    <Content Update="Secrets\secrets.json">
-    	<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>    
+   	<Content Include="Secrets\secrets.json">
+   		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+   		<Link>Secrets\secrets.json</Link>
+   	</Content>  
     *)
