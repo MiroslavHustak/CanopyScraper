@@ -93,13 +93,13 @@ module KodisCanopy =
                     
                     // --headless=new nejak prestalo fungovat, toz strcim okno mimo obrazovku --window-position=-32000,-32000",
                     options.AddArguments(
-                          "--headless=new",
-                          "--disable-gpu",
-                          "--no-sandbox",
-                          "--disable-dev-shm-usage",
-                          "--window-size=1920,1080",
-                          "--window-position=-32000,-32000",
-                          "--disable-blink-features=AutomationControlled"
+                        "--headless=new",
+                        "--disable-gpu",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--window-size=1920,1080",
+                        "--window-position=-32000,-32000",
+                        "--disable-blink-features=AutomationControlled"
                     )
                     
                     let driver = new EdgeDriver(service, options)

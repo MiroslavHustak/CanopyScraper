@@ -228,13 +228,15 @@ module EdgeDriver =
                     let! bytesOpt =
                         match bytesOpt, browserVersionFallback with
                         | Some _, _ 
-                            -> AsyncResult.ok bytesOpt
+                            -> 
+                            AsyncResult.ok bytesOpt
                         | None, Some fallback when fallback <> cleanVersion
                             ->
                             eprintfn "Falling back to installed browser version: %s" fallback
                             tryDownload fallback
                         | None, _ 
-                            -> AsyncResult.ok None
+                            -> 
+                            AsyncResult.ok None
 
                     
                     //let! bytesOpt = AsyncResult.ok None  //for simulating a failure to test the manual download path
